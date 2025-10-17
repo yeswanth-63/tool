@@ -1,0 +1,6 @@
+projectId,oppId,name,status,createdAt,createdBy,techStack
+PRJ-001,a1b2c3d4-e5f6-7890-abcd-1234567890ab,Website Revamp,In Progress,2023-02-05 10:00:00,Alice Johnson,React, Node.js
+PRJ-002,b2c3d4e5-f6a7-8901-bcde-2345678901bc,Mobile App Launch,Completed,2023-03-15 11:30:00,Bob Smith,Flutter, Firebase
+PRJ-003,c3d4e5f6-a7b8-9012-cdef-3456789012cd,Cloud Infra Setup,On Hold,2023-04-10 09:45:00,Charlie Lee,AWS, Terraform
+PRJ-004,d4e5f6a7-b8c9-0123-def0-4567890123de,CRM Customization,In Progress,2023-05-05 14:20:00,Diana Prince,SAPUI5, ABAP
+PRJ-005,e5f6a7b8-c9d0-1234-ef01-5678901234ef,Security Enhancement,Completed,2023-06-01 13:10:00,Ethan Hunt,Java, Spring Boot

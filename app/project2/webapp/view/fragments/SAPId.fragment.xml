@@ -1,0 +1,28 @@
+<core:FragmentDefinition xmlns:core="sap.ui.core"
+                         xmlns="sap.m"
+                         xmlns:mdc="sap.ui.mdc"
+                         xmlns:table="sap.ui.mdc.table">
+
+    <VBox class="sapUiSmallMargin">
+        <mdc:Table
+            id="SAPIdStatuses"
+            autoBindOnInit="true"
+            width="100%"
+            p13nMode="Column,Sort,Filter,Group"
+            selectionMode="Multi"
+            delegate='{
+                "name": "project2/delegate/GenericTableDelegate",
+                "payload": {
+                    "collectionPath": "SAPIdStatuses"
+                }
+            }'
+            showRowCount="true"
+            threshold="1000"
+            enableAutoColumnWidth="true">
+
+            <mdc:type>
+                <table:ResponsiveTableType />
+            </mdc:type>
+        </mdc:Table>
+    </VBox>
+</core:FragmentDefinition>

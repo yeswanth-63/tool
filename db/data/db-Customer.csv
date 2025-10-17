@@ -1,0 +1,6 @@
+customerId,name,createdAt,status
+1,Alice Johnson,2023-01-15 10:30:00,Active
+2,Bob Smith,2023-02-20 14:45:00,Inactive
+3,Charlie Lee,2023-03-05 09:20:00,Active
+4,Diana Prince,2023-04-10 16:00:00,Pending
+5,Ethan Hunt,2023-05-25 11:15:00,Active

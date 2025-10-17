@@ -1,0 +1,9 @@
+<core:FragmentDefinition xmlns:core="sap.ui.core" xmlns="sap.m">
+    <Menu>
+        <items>
+            <MenuItem text="Upload Template" press=".onUploadTemplate" />
+            <MenuItem text="Download Template" press=".onDownloadTemplate" />
+        </items>
+    </Menu>
+</core:FragmentDefinition>
+

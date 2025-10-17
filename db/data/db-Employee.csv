@@ -1,0 +1,6 @@
+ohrId,sapId,firstName,lastName,email,costCenter,skillSet,status,manager
+101,SAP001,Naren,Lokesh,naren.lokesh@example.com,CC1001,SAPUI5, Java, ACTIVE,201
+102,SAP002,Meera,Sharma,meera.sharma@example.com,CC1002,React, Node.js, ACTIVE,201
+103,SAP003,Ravi,Kumar,ravi.kumar@example.com,CC1003,Python, Flask, INACTIVE,202
+104,SAP004,Anita,Reddy,anita.reddy@example.com,CC1004,Java, Spring Boot, ACTIVE,202
+105,SAP005,Vikram,Patel,vikram.patel@example.com,CC1005,AWS, DevOps, ACTIVE,101

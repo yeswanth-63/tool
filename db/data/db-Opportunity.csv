@@ -1,0 +1,6 @@
+oppId,customerId,oppNumber,name,accountId,stage,probability,expectedStart,expectedEnd,createdAt,updatedAt
+a1b2c3d4-e5f6-7890-abcd-1234567890ab,1,OPP-001,Website Redesign,acc-001,Qualification,75.00,2023-02-01,2023-03-15,2023-01-20 09:00:00,2023-01-25 10:30:00
+b2c3d4e5-f6a7-8901-bcde-2345678901bc,2,OPP-002,Mobile App Development,acc-002,Proposal,60.00,2023-03-10,2023-04-20,2023-02-18 11:15:00,2023-02-22 14:00:00
+c3d4e5f6-a7b8-9012-cdef-3456789012cd,3,OPP-003,Cloud Migration,acc-003,Negotiation,85.00,2023-04-05,2023-05-30,2023-03-01 08:45:00,2023-03-10 09:30:00
+d4e5f6a7-b8c9-0123-def0-4567890123de,4,OPP-004,CRM Integration,acc-004,Closed Won,95.00,2023-05-01,2023-06-15,2023-04-12 13:00:00,2023-04-18 15:45:00
+e5f6a7b8-c9d0-1234-ef01-5678901234ef,5,OPP-005,Security Audit,acc-005,Closed Lost,40.00,2023-06-10,2023-07-25,2023-05-20 10:00:00,2023-05-25 12:30:00
