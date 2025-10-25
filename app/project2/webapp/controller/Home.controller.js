@@ -1,7 +1,7 @@
 sap.ui.define([
     "sap/ui/core/mvc/Controller",
-      "sap/ui/core/Fragment",
-      "sap/ui/mdc/p13n/StateUtil",
+    "sap/ui/core/Fragment",
+    "sap/ui/mdc/p13n/StateUtil",
     "sap/m/MessageToast",
     "project2/utility/CustomUtility"
 ], (Controller, Fragment, StateUtil, MessageToast, CustomUtility) => {
@@ -9,67 +9,80 @@ sap.ui.define([
 
     return Controller.extend("project2.controller.Home", {
         onInit() {
-             this._oNavContainer = this.byId("pageContainer");
+            this._oNavContainer = this.byId("pageContainer");
             // Call the centralized controller's onInit
             CustomUtility.prototype.onInit.call(this);
         },
 
-        	onSideNavButtonPress() {
-			const oSideNavigation = this.byId("sideNavigation"),
-				bExpanded = oSideNavigation.getExpanded();
+        onSideNavButtonPress() {
+            const oSideNavigation = this.byId("sideNavigation"),
+                bExpanded = oSideNavigation.getExpanded();
 
-			oSideNavigation.setExpanded(!bExpanded);
-		},
+            oSideNavigation.setExpanded(!bExpanded);
+        },
 
-       onItemSelect: function (oEvent) {
-    const sKey = oEvent.getParameter("item").getKey();
-    const oNavContainer = this.byId("pageContainer");
+        onItemSelect: async function (oEvent) {
+            const sKey = oEvent.getParameter("item").getKey();
+            const oNavContainer = this.byId("pageContainer");
 
-    const pageMap = {
-        home: "root1",
-        customers: "customersPage",
-        opportunities: "opportunitiesPage",
-        projects: "projectsPage",
-        sapid: "sapidPage",
-        employees: "employeesPage",
-        overview: "overviewPage",
-        requirements: "requirementsPage",
-        bench: "benchPage",
-        pendingProjects: "pendingProjectsPage",
-        pendingOpportunities: "pendingOpportunitiesPage"
-    };
+            const pageMap = {
+                home: "root1",
+                customers: "customersPage",
+                opportunities: "opportunitiesPage",
+                projects: "projectsPage",
+                sapid: "sapidPage",
+                employees: "employeesPage",
+                overview: "overviewPage",
+                requirements: "requirementsPage",
+                bench: "benchPage",
+                pendingProjects: "pendingProjectsPage",
+                pendingOpportunities: "pendingOpportunitiesPage"
+            };
 
-    const sPageId = pageMap[sKey];
+            const sPageId = pageMap[sKey];
 
-    if (!sPageId) {
-        console.warn("No page mapped for key:", sKey);
-        return;
-    }
+            if (!sPageId) {
+                console.warn("No page mapped for key:", sKey);
+                return;
+            }
 
-    oNavContainer.to(this.byId(sPageId));
+            // Guard: prompt for unsaved changes before navigating
+            const bOkToNavigate = await this._guardUnsavedChanges();
+            if (!bOkToNavigate) {
+                return;
+            }
 
-    // Load fragment conditionally
-    if (sKey === "customers" && !this._bCustomersLoaded) {
-        this._bCustomersLoaded = true;
-        const oCustomersPage = this.byId(sPageId);
+            oNavContainer.to(this.byId(sPageId));
 
-       Fragment.load({
-    id: this.getView().getId(),
+            // Load fragment conditionally
+            if (sKey === "customers" && !this._bCustomersLoaded) {
+                this._bCustomersLoaded = true;
+                const oCustomersPage = this.byId(sPageId);
+
+                Fragment.load({
+                    id: this.getView().getId(),
                     name: "project2.view.fragments.Customers",
-    controller: this
-}).then(function (oFragment) {
-            oCustomersPage.addContent(oFragment);
+                    controller: this
+                }).then(function (oFragment) {
+                    oCustomersPage.addContent(oFragment);
 
-            const oTable = this.byId("Customers");
-                    
+                    const oTable = this.byId("Customers");
+
                     // Ensure the table has the correct model
                     const oModel = this.getOwnerComponent().getModel();
                     if (oModel) {
                         oTable.setModel(oModel);
                     }
-                    
+
                     // Initialize table-specific functionality
                     this.initializeTable("Customers");
+
+                    // ✅ Call the function from CustomUtility
+                    // CustomUtility.prototype.onSelectionChange.call(this);
+
+
+
+
                 }.bind(this));
             } else if (sKey === "opportunities" && !this._bOpportunitiesLoaded) {
                 this._bOpportunitiesLoaded = true;
@@ -83,13 +96,13 @@ sap.ui.define([
                     oOpportunitiesPage.addContent(oFragment);
 
                     const oTable = this.byId("Opportunities");
-                    
+
                     // Ensure the table has the correct model
                     const oModel = this.getOwnerComponent().getModel();
                     if (oModel) {
                         oTable.setModel(oModel);
                     }
-                    
+
                     // Initialize table-specific functionality
                     this.initializeTable("Opportunities");
                 }.bind(this));
@@ -105,15 +118,19 @@ sap.ui.define([
                     oProjectsPage.addContent(oFragment);
 
                     const oTable = this.byId("Projects");
-                    
+
                     // Ensure the table has the correct model
                     const oModel = this.getOwnerComponent().getModel();
                     if (oModel) {
                         oTable.setModel(oModel);
                     }
-                    
+
                     // Initialize table-specific functionality
                     this.initializeTable("Projects");
+
+                    // ✅ Call your custom function
+
+
                 }.bind(this));
             } else if (sKey === "sapid" && !this._bSAPIdLoaded) {
                 this._bSAPIdLoaded = true;
@@ -127,13 +144,13 @@ sap.ui.define([
                     oSAPIdPage.addContent(oFragment);
 
                     const oTable = this.byId("SAPIdStatuses");
-                    
+
                     // Ensure the table has the correct model
                     const oModel = this.getOwnerComponent().getModel();
                     if (oModel) {
                         oTable.setModel(oModel);
                     }
-                    
+
                     // Initialize table-specific functionality
                     this.initializeTable("SAPIdStatuses");
                 }.bind(this));
@@ -149,17 +166,80 @@ sap.ui.define([
                     oEmployeesPage.addContent(oFragment);
 
                     const oTable = this.byId("Employees");
-                    
+
                     // Ensure the table has the correct model
                     const oModel = this.getOwnerComponent().getModel();
                     if (oModel) {
                         oTable.setModel(oModel);
                     }
-                    
+
                     // Initialize table-specific functionality
                     this.initializeTable("Employees");
                 }.bind(this));
             }
+        },
+
+        // Prompt user if there are unsaved changes; return true if navigation can proceed
+        _guardUnsavedChanges: async function () {
+            // Determine current visible page, then infer its table and buttons
+            const oNavContainer = this.byId("pageContainer");
+            const oCurrentPage = oNavContainer && oNavContainer.getCurrentPage && oNavContainer.getCurrentPage();
+            const sLocalPageId = oCurrentPage && oCurrentPage.getId && oCurrentPage.getId().split("--").pop();
+
+            const pageToTable = {
+                customersPage: "Customers",
+                employeesPage: "Employees",
+                opportunitiesPage: "Opportunities",
+                projectsPage: "Projects",
+                sapidPage: "SAPIdStatuses"
+            };
+            const tableToButtons = {
+                Customers: { save: "saveButton", cancel: "cancelButton" },
+                Employees: { save: "saveButton_emp", cancel: "cancelButton_emp" },
+                Opportunities: { save: "saveButton_oppr", cancel: "cancelButton_oppr" },
+                Projects: { save: "saveButton_proj", cancel: "cancelButton_proj" },
+                SAPIdStatuses: { save: "saveButton_sap", cancel: "cancelButton_sap" }
+            };
+
+            const sActiveTable = pageToTable[sLocalPageId] || null;
+            if (!sActiveTable) {
+                return true; // not on a data fragment
+            }
+
+            const ids = tableToButtons[sActiveTable];
+            const saveBtn = this.byId(ids.save);
+            const cancelBtn = this.byId(ids.cancel);
+            const bCurrentHasEnabled = (!!saveBtn && saveBtn.getEnabled && saveBtn.getEnabled()) || (!!cancelBtn && cancelBtn.getEnabled && cancelBtn.getEnabled());
+
+            if (!bCurrentHasEnabled) {
+                return true; // nothing to guard in current fragment
+            }
+
+            return new Promise((resolve) => {
+                sap.m.MessageBox.warning(
+                    "You have unsaved changes. What would you like to do?",
+                    {
+                        actions: ["Save", "Discard", "Stay"],
+                        emphasizedAction: "Save",
+                        onClose: async (sAction) => {
+                            if (sAction === "Stay") {
+                                resolve(false);
+                                return;
+                            }
+                            // Execute action for CURRENT fragment only (based on visible page)
+                            if (sAction === "Save") {
+                                const oBtn = this.byId(ids.save);
+                                if (oBtn) {
+                                    try { await this.onSaveButtonPress({ getSource: () => oBtn }); } catch (e) {}
+                                }
+                            } else if (sAction === "Discard") {
+                                try { CustomUtility.prototype.cancelForTableImmediate.call(this, sActiveTable); } catch (e) {}
+                            }
+                            resolve(true);
+                        }
+                    }
+                );
+            });
         },
 
         // Include all methods from CustomUtility
@@ -168,18 +248,49 @@ sap.ui.define([
         _getSelectedContexts: CustomUtility.prototype._getSelectedContexts,
         _updateSelectionState: CustomUtility.prototype._updateSelectionState,
         _updatePendingState: CustomUtility.prototype._updatePendingState,
-        onAddPress: CustomUtility.prototype.onAddPress,
-        onDeletePress: CustomUtility.prototype.onDeletePress,
-        onSaveChanges: CustomUtility.prototype.onSaveChanges,
-        onCancelChanges: CustomUtility.prototype.onCancelChanges,
-        onCopyToClipboard: CustomUtility.prototype.onCopyToClipboard,
-        onUploadPress: CustomUtility.prototype.onUploadPress,
-        onUploadTemplate: CustomUtility.prototype.onUploadTemplate,
-        onDownloadTemplate: CustomUtility.prototype.onDownloadTemplate,
-        onEditPress: CustomUtility.prototype.onEditPress,
-        onAlignToggle: CustomUtility.prototype.onAlignToggle,
+        // onSelectionChange: CustomUtility.prototype.onSelectionChange,
+        // onAddPress: CustomUtility.prototype.onAddPress,
+        // onDeletePress: CustomUtility.prototype.onDeletePress,
+        // onSaveChanges: CustomUtility.prototype.onSaveChanges,
+        // onCancelChanges: CustomUtility.prototype.onCancelChanges,
+        // onCopyToClipboard: CustomUtility.prototype.onCopyToClipboard,
+        // onUploadPress: CustomUtility.prototype.onUploadPress,
+        // onUploadTemplate: CustomUtility.prototype.onUploadTemplate,
+        // onDownloadTemplate: CustomUtility.prototype.onDownloadTemplate,
+        // onEditPress: CustomUtility.prototype.onEditPress,
+        // onAlignToggle: CustomUtility.prototype.onAlignToggle,
         _openPersonDialog: CustomUtility.prototype._openPersonDialog,
         onInlineAccept: CustomUtility.prototype.onInlineAccept,
-        onInlineCancel: CustomUtility.prototype.onInlineCancel
+        onInlineCancel: CustomUtility.prototype.onInlineCancel,
+        // onSelectionChange_customers: CustomUtility.prototype.onSelectionChange_customers,
+        // onSelectionChange_employees: CustomUtility.prototype.onSelectionChange_employees,
+        // onSelectionChange_opportunities: CustomUtility.prototype.onSelectionChange_opportunities,
+        // onSelectionChange_projects: CustomUtility.prototype.onSelectionChange_projects,
+        // onSelectionChange_sapid: CustomUtility.prototype.onSelectionChange_sapid,
+        onSelectionChange:CustomUtility.prototype.onSelectionChange,
+        onDeletePress:CustomUtility.prototype.onDeletePress,
+        onEditPress:CustomUtility.prototype.onEditPress,
+        onAdd:CustomUtility.prototype.onAdd,
+        onSaveButtonPress:CustomUtility.prototype.onSaveButtonPress,
+        onCancelButtonPress:CustomUtility.prototype.onCancelButtonPress,
+        onCSVExport:CustomUtility.prototype.onCSVExport,
+        onTemplateDownload:CustomUtility.prototype.onTemplateDownload,
+        forceExitEditMode:CustomUtility.prototype.forceExitEditMode,
+        debugEditState:CustomUtility.prototype.debugEditState,
+        aggressiveCancel:CustomUtility.prototype.aggressiveCancel,
+        testCancel:CustomUtility.prototype.testCancel,
+        directCancel:CustomUtility.prototype.directCancel,
+        simpleCancel:CustomUtility.prototype.simpleCancel,
+        // Helpers needed by onAdd flow
+        _createEmptyRowData: CustomUtility.prototype._createEmptyRowData,
+        _executeAddWithRetry: CustomUtility.prototype._executeAddWithRetry,
+        _resolveContextByPath: CustomUtility.prototype._resolveContextByPath,
+        _getRowBinding: CustomUtility.prototype._getRowBinding,
+        // helper used by onAdd to detect the correct MDC table from the pressed button
+        _findMdcTableFromSource: CustomUtility.prototype._findMdcTableFromSource,
+        // helper used by save to isolate groups per fragment/table
+        _getGroupIdForTable: CustomUtility.prototype._getGroupIdForTable
+
+        
     });
 });

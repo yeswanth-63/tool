@@ -81,50 +81,20 @@ sap.ui.define([
             .catch(function (oError) {
                 console.error("[GenericDelegate] Error fetching properties:", oError);
                 console.log("[GenericDelegate] Using fallback properties for", sCollectionPath);
-                
-                // Fallback properties based on collection path
-                // const mFallbackProperties = {
-                //     "Customers": [
-                //         { name: "customerId", path: "customerId", label: "Customer ID", dataType: "Edm.Int32", sortable: true, filterable: true, groupable: true, maxConditions: -1 },
-                //         { name: "name", path: "name", label: "Name", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false },
-                //         { name: "status", path: "status", label: "Status", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false },
-                //         { name: "createdAt", path: "createdAt", label: "Created At", dataType: "Edm.DateTimeOffset", sortable: true, filterable: true, groupable: true, maxConditions: -1 }
-                //     ],
-                //     "Opportunities": [
-                //         { name: "oppId", path: "oppId", label: "Opportunity ID", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false },
-                //         { name: "customerId", path: "customerId", label: "Customer ID", dataType: "Edm.Int32", sortable: true, filterable: true, groupable: true, maxConditions: -1 },
-                //         { name: "oppNumber", path: "oppNumber", label: "Opportunity Number", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false },
-                //         { name: "name", path: "name", label: "Name", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false },
-                //         { name: "stage", path: "stage", label: "Stage", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false },
-                //         { name: "probability", path: "probability", label: "Probability", dataType: "Edm.Decimal", sortable: true, filterable: true, groupable: true, maxConditions: -1 },
-                //         { name: "expectedStart", path: "expectedStart", label: "Expected Start", dataType: "Edm.Date", sortable: true, filterable: true, groupable: true, maxConditions: -1 },
-                //         { name: "expectedEnd", path: "expectedEnd", label: "Expected End", dataType: "Edm.Date", sortable: true, filterable: true, groupable: true, maxConditions: -1 }
-                //     ],
-                //     "Projects": [
-                //         { name: "projectId", path: "projectId", label: "Project ID", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false },
-                //         { name: "oppId", path: "oppId", label: "Opportunity ID", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false },
-                //         { name: "name", path: "name", label: "Name", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false },
-                //         { name: "status", path: "status", label: "Status", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false },
-                //         { name: "createdBy", path: "createdBy", label: "Created By", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false },
-                //         { name: "techStack", path: "techStack", label: "Tech Stack", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false }
-                //     ],
-                //     "SAPIdStatuses": [
-                //         { name: "sapId", path: "sapId", label: "SAP ID", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false },
-                //         { name: "currentProjectId", path: "currentProjectId", label: "Current Project ID", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false },
-                //         { name: "lastSeen", path: "lastSeen", label: "Last Seen", dataType: "Edm.DateTimeOffset", sortable: true, filterable: true, groupable: true, maxConditions: -1 }
-                //     ],
-                //     "Employees": [
-                //         { name: "ohrId", path: "ohrId", label: "OHR ID", dataType: "Edm.Int32", sortable: true, filterable: true, groupable: true, maxConditions: -1 },
-                //         { name: "sapId", path: "sapId", label: "SAP ID", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false },
-                //         { name: "firstName", path: "firstName", label: "First Name", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false },
-                //         { name: "lastName", path: "lastName", label: "Last Name", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false },
-                //         { name: "email", path: "email", label: "Email", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false },
-                //         { name: "costCenter", path: "costCenter", label: "Cost Center", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false },
-                //         { name: "skillSet", path: "skillSet", label: "Skill Set", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false },
-                //         { name: "status", path: "status", label: "Status", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false },
-                //         { name: "manager", path: "manager", label: "Manager", dataType: "Edm.String", sortable: true, filterable: true, groupable: true, maxConditions: -1, caseSensitive: false }
-                //     ]
-                // };
+
+                // Fallback properties for Opportunities
+                const mFallbackProperties = {
+                    "Opportunities": [
+                        { name: "sapOpportunityId", path: "sapOpportunityId", label: "SAP Opportunity ID", dataType: "Edm.Int32", sortable: true, filterable: true, groupable: true },
+                        { name: "sfdcOpportunityId", path: "sfdcOpportunityId", label: "SFDC Opportunity ID", dataType: "Edm.String", sortable: true, filterable: true, groupable: true },
+                        { name: "probability", path: "probability", label: "Probability", dataType: "Edm.String", sortable: true, filterable: true, groupable: true },
+                        { name: "salesSPOC", path: "salesSPOC", label: "Sales SPOC", dataType: "Edm.String", sortable: true, filterable: true, groupable: true },
+                        { name: "deliverySPOC", path: "deliverySPOC", label: "Delivery SPOC", dataType: "Edm.String", sortable: true, filterable: true, groupable: true },
+                        { name: "expectedStart", path: "expectedStart", label: "Expected Start", dataType: "Edm.Date", sortable: true, filterable: true, groupable: true },
+                        { name: "expectedEnd", path: "expectedEnd", label: "Expected End", dataType: "Edm.Date", sortable: true, filterable: true, groupable: true },
+                        { name: "customerId", path: "customerId", label: "Customer ID", dataType: "Edm.Int32", sortable: true, filterable: true, groupable: true }
+                    ]
+                };
 
                 return mFallbackProperties[sCollectionPath] || [];
             });
@@ -171,9 +141,19 @@ sap.ui.define([
                         value: "{" + sPropertyName + "}",
                         editMode: {
                             parts: [{ path: 'edit>/editingPath' }],
+                            mode:"TwoWay",
                             formatter: function (sPath) {
                                 var rowPath = this.getBindingContext() && this.getBindingContext().getPath();
-                                return sPath === rowPath ? "Editable" : "Display";
+                                
+                                // 🚀 MULTI-ROW EDITING: Check if current row is in the editing paths
+                                if (sPath && sPath.includes(",")) {
+                                    // Multi-row editing: check if current row path is in the comma-separated list
+                                    const aEditingPaths = sPath.split(",");
+                                    return aEditingPaths.includes(rowPath) ? "Editable" : "Display";
+                                } else {
+                                    // Single row editing: exact match
+                                    return sPath === rowPath ? "Editable" : "Display";
+                                }
                             }
                         }
                     });

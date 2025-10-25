@@ -4,25 +4,62 @@
                          xmlns:table="sap.ui.mdc.table">
 
     <VBox class="sapUiSmallMargin">
+
         <mdc:Table
             id="SAPIdStatuses"
+            header="SAPIdStatuses"
             autoBindOnInit="true"
             width="100%"
             p13nMode="Column,Sort,Filter,Group"
             selectionMode="Multi"
             delegate='{
-                "name": "project2/delegate/GenericTableDelegate",
+                "name": "project2/delegate/SAPidTableDelegate",
                 "payload": {
                     "collectionPath": "SAPIdStatuses"
                 }
             }'
             showRowCount="true"
             threshold="1000"
-            enableAutoColumnWidth="true">
+            enableAutoColumnWidth="true"
+            selectionChange="onSelectionChange">
 
             <mdc:type>
                 <table:ResponsiveTableType />
             </mdc:type>
+
+            <!-- ✅ Heading and Buttons in actions toolbar -->
+            <mdc:actions>
+                <OverflowToolbar>
+                    <!-- Save and Cancel Buttons -->
+                    <HBox >
+                        <Button
+                            id="saveButton_sap"
+                            text="Save"
+                            type="Accept"
+                            enabled="false"
+                            press="onSaveButtonPress"
+                        />
+                        <Button
+                            id="cancelButton_sap"
+                            text="Cancel"
+                            type="Reject"
+                            enabled="false"
+                            press="onCancelButtonPress"
+                            class="sapUiSmallMarginBegin"
+                        />
+                    </HBox>
+                    <!-- Action Buttons -->
+                    <Button icon="sap-icon://add" tooltip="Add" press="onAdd"/>
+                    <Button icon="sap-icon://delete" id="btnDelete_sap" tooltip="Delete" press="onDeletePress" enabled="false"/>
+                    <Button icon="sap-icon://edit" id="btnEdit_sap" tooltip="Edit" press="onEditPress" enabled="false"/>
+                    <Button icon="sap-icon://excel-attachment" id="btnCSV_sap" tooltip="Export CSV" press="onCSVExport"/>
+                    <Button icon="sap-icon://document" id="btnTemplate_sap" tooltip="Download Template" press="onTemplateDownload"/>
+                </OverflowToolbar>
+            </mdc:actions>
+              <mdc:copyProvider>
+					<plugins.CopyProvider id="copyProvider_sapid"/>
+			</mdc:copyProvider>
+
         </mdc:Table>
     </VBox>
 </core:FragmentDefinition>

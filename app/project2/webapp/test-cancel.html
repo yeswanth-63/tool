@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cancel Test</title>
+    <script src="https://sapui5.hana.ondemand.com/1.141.1/resources/sap-ui-core.js"></script>
+</head>
+<body>
+    <div id="content"></div>
+    <script>
+        sap.ui.require([
+            "sap/ui/core/mvc/Controller",
+            "sap/ui/model/json/JSONModel",
+            "sap/m/MessageBox",
+            "sap/m/MessageToast"
+        ], function (Controller, JSONModel, MessageBox, MessageToast) {
+            
+            // Test the cancel functionality directly
+            const TestController = Controller.extend("test.controller", {
+                onInit: function() {
+                    console.log("Test controller initialized");
+                    
+                    // Create test data
+                    const oModel = new JSONModel({
+                        items: [
+                            { id: 1, name: "Test Customer 1", email: "test1@example.com" },
+                            { id: 2, name: "Test Customer 2", email: "test2@example.com" }
+                        ]
+                    });
+                    this.getView().setModel(oModel);
+                    
+                    // Create edit model
+                    this.getView().setModel(new JSONModel({ editingPath: null, mode: null }), "edit");
+                },
+                
+                // Test the cancel functionality
+                testCancel: function() {
+                    console.log("=== Testing Cancel Functionality ===");
+                    
+                    const oEditModel = this.getView().getModel("edit");
+                    const oModel = this.getView().getModel();
+                    
+                    // Simulate edit mode
+                    oEditModel.setProperty("/editingPath", "/items/0");
+                    oEditModel.setProperty("/mode", "edit");
+                    
+                    // Store original data
+                    const oData = oModel.getProperty("/items/0");
+                    oData._originalData = JSON.parse(JSON.stringify(oData));
+                    oData.isEditable = true;
+                    
+                    console.log("Edit mode set, original data stored");
+                    
+                    // Test cancel
+                    this._performCancel();
+                },
+                
+                _performCancel: function() {
+                    console.log("=== [Test] Starting cancel operation ===");
+                    
+                    const oView = this.getView();
+                    const oModel = oView.getModel();
+                    const oEditModel = oView.getModel("edit");
+                    const sPath = oEditModel.getProperty("/editingPath");
+                    
+                    console.log("Current editing path:", sPath);
+                    
+                    if (!sPath) {
+                        MessageToast.show("No row is in edit mode.");
+                        return;
+                    }
+                    
+                    try {
+                        // Reset model changes
+                        if (oModel && oModel.resetChanges) {
+                            oModel.resetChanges();
+                        }
+                        
+                        // Restore original data
+                        const oData = oModel.getProperty(sPath);
+                        if (oData._originalData) {
+                            const oOriginalData = oData._originalData;
+                            
+                            // Restore all original properties
+                            Object.keys(oOriginalData).forEach(sKey => {
+                                if (sKey !== '_originalData' && sKey !== 'isEditable' && sKey !== '_hasChanged') {
+                                    oModel.setProperty(sPath + "/" + sKey, oOriginalData[sKey]);
+                                }
+                            });
+                            
+                            // Clean up
+                            delete oData._originalData;
+                            delete oData._hasChanged;
+                            delete oData.isEditable;
+                        }
+                        
+                        // Clear edit state
+                        oEditModel.setProperty("/editingPath", "");
+                        oEditModel.setProperty("/mode", null);
+                        
+                        console.log("=== [Test] Cancel completed successfully ===");
+                        MessageToast.show("Changes discarded successfully.");
+                        
+                    } catch (error) {
+                        console.error("Error during cancel operation:", error);
+                        MessageBox.error("Error discarding changes. Please try again.");
+                    }
+                }
+            });
+            
+            // Create view and controller
+            const oView = new sap.ui.core.mvc.View({
+                viewName: "test.view",
+                type: "XML",
+                controller: new TestController()
+            });
+            
+            oView.placeAt("content");
+            
+            // Test the cancel functionality
+            setTimeout(() => {
+                const controller = oView.getController();
+                controller.testCancel();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
