@@ -26,6 +26,9 @@
   "private": true,
   "cds": {
     "requires": {
+      "db": {
+        "kind": "sqlite"
+      },
       "[production]": {
         "auth": "xsuaa"
       }

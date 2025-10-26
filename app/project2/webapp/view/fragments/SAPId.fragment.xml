@@ -20,6 +20,7 @@
             }'
             showRowCount="true"
             threshold="1000"
+            enableExport="true"
             enableAutoColumnWidth="true"
             selectionChange="onSelectionChange">
 
@@ -52,8 +53,6 @@
                     <Button icon="sap-icon://add" id="btnAdd_sap" tooltip="Add" press="onAdd"/>
                     <Button icon="sap-icon://delete" id="btnDelete_sap" tooltip="Delete" press="onDeletePress" enabled="false"/>
                     <Button icon="sap-icon://edit" id="btnEdit_sap" tooltip="Edit" press="onEditPress" enabled="false"/>
-                    <Button icon="sap-icon://excel-attachment" id="btnCSV_sap" tooltip="Export CSV" press="onCSVExport"/>
-                    <Button icon="sap-icon://document" id="btnTemplate_sap" tooltip="Download Template" press="onTemplateDownload"/>
                 </OverflowToolbar>
             </mdc:actions>
               <mdc:copyProvider>

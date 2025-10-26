@@ -197,38 +197,86 @@ sap.ui.define([
                         let bAllDeleted = true;
                         let sErrorMessage = "";
 
-                    for (const oContext of aSelectedContexts) {
-                        try {
-                                console.log("Attempting to delete context:", oContext.getPath());
-                                
-                                // For in-memory data, just remove from UI immediately
-                                const oBinding = oTable.getBinding("items");
-                                if (oBinding && oBinding.remove) {
-                                    oBinding.remove(oContext);
-                                    console.log("Removed context from binding directly");
-                                } else {
-                                    // Force refresh to remove from UI
-                                    oTable.getBinding("items")?.refresh();
-                                    console.log("Forced table refresh to remove from UI");
-                                }
-                                
-                                // Also try OData delete in background (don't wait for it)
-                                oContext.delete().catch(error => {
-                                    console.log("Background OData delete failed (expected for in-memory data):", error.message);
-                                });
-                                
-                                console.log("Successfully processed delete for context:", oContext.getPath());
-                            } catch (error) {
-                                console.error("Failed to process delete for context:", oContext.getPath(), error);
-                                bAllDeleted = false;
-                                sErrorMessage += `Failed to delete ${oContext.getPath()}: ${error.message}\n`;
+                    // 🚨 OFFICIAL SAP APPROACH: Use oContext.delete().then() pattern
+                    console.log(`=== OFFICIAL SAP DELETE START ===`);
+                    console.log(`Selected contexts: ${aSelectedContexts.length}`);
+                    
+                    try {
+                        // Use OData V4 update group so deletes are persisted server-side
+                        console.log(`⏳ Deleting with update group "changesGroup"...`);
+                        const oModel = this.getView().getModel();
+                        const sGroupId = "changesGroup";
+                        let queued = 0;
+                        aSelectedContexts.forEach((oContext, index) => {
+                            try {
+                                const sPath = oContext.getPath && oContext.getPath();
+                                console.log(`⏳ Queue DELETE ${index + 1}/${aSelectedContexts.length}: ${sPath}`);
+                                oContext.delete(sGroupId);
+                                queued++;
+                            } catch (e) {
+                                console.log("❌ Failed to queue delete:", e);
                             }
+                        });
+                        if (queued > 0 && oModel && oModel.submitBatch) {
+                            await oModel.submitBatch(sGroupId);
+                            console.log(`✅ Batch submitted for ${queued} deletes`);
+                            bAllDeleted = true;
+                        } else {
+                            bAllDeleted = false;
                         }
                         
-                        console.log("All delete operations completed. Success:", bAllDeleted);
+                    } catch (deleteError) {
+                        console.log(`❌ Official delete failed:`, deleteError.message);
+                        bAllDeleted = false;
+                    }
+                    
+                    console.log(`=== DELETE OPERATION END ===`);
+                    
+                    // 🚨 OFFICIAL SAP PATTERN: Handle UI changes and refresh
+                    console.log("🔄 Following official SAP pattern for UI updates...");
+                    
+                    try {
+                        // Set UI changes state (official SAP pattern)
+                        this._setUIChanges(true);
+                        console.log("✅ UI changes state set");
                         
-                        // Clear selection
+                        // Wait a moment for backend to process deletions
+                        setTimeout(() => {
+                            try {
+                                // Call the existing initializeTable function to update the table
+                                this.initializeTable(sTableId);
+                                console.log("✅ Table updated successfully");
+                                
+                                // Reset UI changes state after successful update
+                                this._setUIChanges(false);
+                                console.log("✅ UI changes state reset");
+                                
+                            } catch (updateError) {
+                                console.log("❌ Table update error:", updateError);
+                                // Reset UI changes state on error
+                                this._setUIChanges(false);
+                            }
+                        }, 500); // Small delay to allow backend processing
+                        
+                    } catch (updateError) {
+                        console.log("❌ Table update error:", updateError);
+                        // Reset UI changes state on error
+                        this._setUIChanges(false);
+                    }
+                        
+                    console.log("All delete operations completed. Success:", bAllDeleted);
+                    
+                    // Clear selection and force complete UI update
                     oTable.clearSelection();
+
+                    // 🚨 SIMPLE: Just call the table update function again
+                    try {
+                        console.log("🔄 Final table update...");
+                        this.initializeTable(sTableId);
+                        console.log("✅ Final table update completed");
+                    } catch (finalUpdateError) {
+                        console.log("Final table update error:", finalUpdateError);
+                    }
 
                         if (bAllDeleted) {
                             // All deletions successful
@@ -252,14 +300,18 @@ sap.ui.define([
                         }
                         
                     } catch (error) {
-                        // Critical error
-                        console.error("Critical delete operation error:", error);
-                        sap.m.MessageBox.error("Delete operation failed completely. Please try again.");
-                        
-                        // Refresh table to restore state
-                        const oBinding = oTable.getBinding("items");
-                        if (oBinding) {
-                            oBinding.refresh();
+                        // Only show blocking error if delete batch actually failed
+                        if (!bAllDeleted) {
+                            console.error("Critical delete operation error:", error);
+                            sap.m.MessageBox.error("Delete operation failed completely. Please try again.");
+                            // Refresh table to restore state
+                            const oBinding = oTable.getBinding("items");
+                            if (oBinding) {
+                                oBinding.refresh();
+                            }
+                        } else {
+                            // Non-critical error after successful delete (e.g., UI refresh)
+                            console.warn("Non-critical error after successful delete:", error);
                         }
                     } finally {
                         // ALWAYS clear busy state - this is critical!
@@ -538,14 +590,34 @@ sap.ui.define([
                                 oEditModel.setProperty("/editingPath", "");
                                 oEditModel.setProperty("/mode", null);
                                 
-                                // Reset any pending OData changes to prevent saving
+                                // 🚨 CRITICAL: Discard pending changes for edited contexts only
+                                console.log("[MULTI-CANCEL] Discarding pending changes for edited contexts...");
                                 try {
-                                    if (oModel && oModel.resetChanges) {
-                                        oModel.resetChanges();
-                                        console.log("[MULTI-CANCEL] Reset OData model changes");
+                                    const oModel = self.getView().getModel();
+                                    if (oModel && oModel.getPendingChanges) {
+                                        const aPendingChanges = oModel.getPendingChanges();
+                                        console.log("[MULTI-CANCEL] Pending changes found:", aPendingChanges.length);
+                                        
+                                        // Discard changes for specific contexts
+                                        aContextsToCancel.forEach((oContext, index) => {
+                                            if (oContext && oContext.getPath) {
+                                                const sContextPath = oContext.getPath();
+                                                console.log(`[MULTI-CANCEL] Discarding changes for context ${index + 1}: ${sContextPath}`);
+                                                
+                                                // Try to discard changes for this specific context
+                                                try {
+                                                    if (oContext.reset) {
+                                                        oContext.reset();
+                                                        console.log(`[MULTI-CANCEL] Reset context ${index + 1}`);
+                                                    }
+                                                } catch (resetError) {
+                                                    console.log(`[MULTI-CANCEL] Context reset failed for ${index + 1}:`, resetError);
+                                                }
+                                            }
+                                        });
                                     }
-                                } catch (resetError) {
-                                    console.warn("[MULTI-CANCEL] Error resetting model changes:", resetError);
+                                } catch (discardError) {
+                                    console.log("[MULTI-CANCEL] Error discarding pending changes:", discardError);
                                 }
 
                                 // 5. Clear selection and reset buttons for the specific table
@@ -558,18 +630,23 @@ sap.ui.define([
                                 self.byId(config.delete)?.setEnabled(false); // Disable delete until new selection
                                 self.byId(config.add)?.setEnabled(true);
 
-                                // 6. Force table refresh to exit edit mode
+                                // 6. Reset binding changes per SAP pattern, then force table refresh to exit edit mode
                                 try {
-                                    // Force refresh all bindings
+                                    // Reset pending changes at binding level
                                     const oBinding = oTable.getBinding("items");
-                                    if (oBinding) {
-                                        oBinding.refresh();
-                                    }
-                                    
                                     const oRowBinding = oTable.getRowBinding && oTable.getRowBinding();
-                                    if (oRowBinding) {
-                                        oRowBinding.refresh();
+                                    if (oBinding && oBinding.resetChanges) {
+                                        oBinding.resetChanges();
+                                        console.log("[MULTI-CANCEL] Binding changes reset");
                                     }
+                                    if (oRowBinding && oRowBinding.resetChanges) {
+                                        oRowBinding.resetChanges();
+                                        console.log("[MULTI-CANCEL] Row binding changes reset");
+                                    }
+
+                                    // Force refresh all bindings
+                                    if (oBinding) { oBinding.refresh(true); }
+                                    if (oRowBinding) { oRowBinding.refresh(true); }
                                     
                                     // Force refresh the table itself
                                     if (oTable.refresh) {
@@ -605,7 +682,15 @@ sap.ui.define([
                                     console.log("Cancel Button Enabled:", self.byId(config.cancel)?.getEnabled());
                                 }, 200);
 
-                                // 8. Force exit edit mode completely
+                                // 8. 🚨 CRITICAL: Force refresh from database to show original data
+                                const oBinding = oTable.getBinding("items");
+                                if (oBinding) {
+                                    // Force refresh from server to get original data
+                                    oBinding.refresh(true); // true = force refresh from server
+                                    console.log("[MULTI-CANCEL] Forced table refresh from database to show original data");
+                                }
+                                
+                                // 9. Force exit edit mode completely
                                 try {
                                     // Force all cells to exit edit mode
                                     const oInnerTable = oTable._oTable;
@@ -626,6 +711,14 @@ sap.ui.define([
                                 } catch (editModeError) {
                                     console.warn("[MULTI-CANCEL] Error forcing exit from edit mode:", editModeError);
                                 }
+                                
+                                // 10. Additional refresh to ensure UI shows original data
+                                setTimeout(() => {
+                                    if (oBinding) {
+                                        oBinding.refresh(true);
+                                        console.log("[MULTI-CANCEL] Secondary refresh from database");
+                                    }
+                                }, 100);
                                 
                                 sap.m.MessageToast.show("Changes discarded successfully.");
                             } catch (error) {
@@ -664,57 +757,137 @@ sap.ui.define([
                 console.log("=== [CANCEL] Current Edit State ===");
                 console.log("Edit Model:", oEditModel.getData());
 
-                // 2. Reset any pending changes in the OData model
-                console.log("Resetting OData model changes...");
-                if (oModel && oModel.resetChanges) {
-                    oModel.resetChanges();
+                // 2. 🚨 CRITICAL: Discard pending changes first to allow refresh
+                console.log("Discarding pending changes to allow refresh...");
+                try {
+                    if (oModel && oModel.getPendingChanges) {
+                        const aPendingChanges = oModel.getPendingChanges();
+                        console.log("Pending changes found:", aPendingChanges.length);
+                        
+                        // Try to discard all pending changes
+                        if (aPendingChanges.length > 0) {
+                            console.log("Discarding all pending changes...");
+                            // Force discard changes by resetting the model
+                            if (oModel.resetChanges) {
+                                oModel.resetChanges();
+                                console.log("Reset all pending changes");
+                            }
+                        }
+                    }
+                } catch (discardError) {
+                    console.log("Error discarding pending changes:", discardError);
                 }
 
-                // 3. Find the edited context
+                // 3. Find the edited context first
                             const aContexts = oTable.getSelectedContexts();
                 const oContext = aContexts.find(ctx => ctx.getPath() === sPath) || aContexts[0];
 
                 console.log("Found context:", oContext);
 
                 if (oContext) {
+                    // 🚨 CRITICAL: Discard OData changes for this specific context
+                    try {
+                        // Method 1: Try to reset the specific context
+                        if (oContext.reset) {
+                            oContext.reset();
+                            console.log("Reset specific context to discard OData changes");
+                        }
+                        
+                        // Method 2: Try to discard changes at the binding level
+                        const oBinding = oTable.getBinding("items");
+                        if (oBinding && oBinding.discardChanges) {
+                            oBinding.discardChanges();
+                            console.log("Discarded changes at binding level");
+                        }
+                    } catch (discardError) {
+                        console.log("Error discarding OData changes:", discardError);
+                    }
+                    
                     // If transient (new row not yet submitted), delete the context to abandon creation
                     if (typeof oContext.isTransient === "function" && oContext.isTransient()) {
                         try {
                             oContext.delete();
+                            console.log("Deleted transient context");
                         } catch (e) {
-                            // ignore
+                            console.log("Error deleting transient context:", e);
                         }
-                    }
+                    } else {
+                        // For existing rows, restore original data
                                 const oData = oContext.getObject();
-                    console.log("Original data exists:", !!oData._originalData);
-                    
-                                if (oData._originalData) {
-                        console.log("Restoring original data using helper pattern...");
-                        // Use the same pattern as the working helper file
-                        const oOriginalData = oData._originalData;
+                        console.log("Original data exists:", !!oData._originalData);
                         
-                        // Restore all original properties including dates
-                        Object.keys(oOriginalData).forEach(sKey => {
-                            if (sKey !== '_originalData' && sKey !== 'isEditable' && sKey !== '_hasChanged') {
-                                // Special handling for date fields if needed
-                                let vValue = oOriginalData[sKey];
-                                if (vValue instanceof Date) {
-                                    // Ensure we're setting a proper Date object
-                                    vValue = new Date(vValue.getTime());
+                                if (oData._originalData) {
+                            console.log("Restoring original data for existing row...");
+                            const oOriginalData = oData._originalData;
+                            
+                            // 🚨 CRITICAL: Force restore original data to context
+                            Object.keys(oOriginalData).forEach(sKey => {
+                                if (sKey !== '_originalData' && sKey !== 'isEditable' && sKey !== '_hasChanged') {
+                                    try {
+                                        oContext.setProperty(sKey, oOriginalData[sKey]);
+                                        console.log(`Restored property ${sKey}:`, oOriginalData[sKey]);
+                                    } catch (propError) {
+                                        console.warn(`Failed to restore property ${sKey}:`, propError);
+                                    }
                                 }
-                                oContext.setProperty(sKey, vValue);
-                            }
-                        });
+                            });
 
-                        // Clean up the temporary properties
+                            // Clean up the temporary properties
                                     delete oData._originalData;
-                        delete oData._hasChanged;
+                            delete oData._hasChanged;
                                     delete oData.isEditable;
+                            console.log("Cleaned up temporary properties");
+                            
+                            // 🚨 CRITICAL: Force UI update by triggering change event
+                            try {
+                                oContext.refresh();
+                                console.log("Triggered context refresh after data restoration");
+                                
+                                // Also try to force update the table cells directly
+                                const oInnerTable = oTable._oTable;
+                                if (oInnerTable && oInnerTable.getItems) {
+                                    const aItems = oInnerTable.getItems();
+                                    const oRow = aItems.find(item => item.getBindingContext() === oContext);
+                                    if (oRow && oRow.getCells) {
+                                        oRow.getCells().forEach(cell => {
+                                            const oBinding = cell.getBinding("value");
+                                            if (oBinding && oBinding.getPath) {
+                                                const sProp = oBinding.getPath();
+                                                const vOriginalValue = oOriginalData[sProp];
+                                                if (vOriginalValue !== undefined) {
+                                                    cell.setValue(vOriginalValue);
+                                                    console.log(`Forced cell update for ${sProp}:`, vOriginalValue);
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
+                            } catch (refreshError) {
+                                console.log("Context refresh failed:", refreshError);
+                            }
+                        } else {
+                            console.log("No original data found - forcing refresh to discard changes");
+                            // Force refresh to discard any pending changes
+                            const oBinding = oTable.getBinding("items");
+                            if (oBinding) {
+                                oBinding.refresh();
+                            }
+                            
+                            // Also try to reset the specific context if possible
+                            try {
+                                if (oContext.reset) {
+                                    oContext.reset();
+                                    console.log("Reset context to discard changes");
+                                }
+                            } catch (resetError) {
+                                console.log("Context reset not available:", resetError);
+                            }
+                        }
                     }
                 }
 
                 // 4. Clear edit state using the working pattern
-                oEditModel.setProperty("/editingPath", "");
+                            oEditModel.setProperty("/editingPath", "");
                 oEditModel.setProperty("/mode", null);
 
                 // 5. Clear selection and reset buttons
@@ -725,11 +898,167 @@ sap.ui.define([
                 this.byId("btnDelete_cus")?.setEnabled(true);
                 this.byId("btnAdd")?.setEnabled(true);
 
-                // 6. Force table refresh
+                // 6. 🚨 CRITICAL: Force refresh from database to show original data
                 const oBinding = oTable.getBinding("items");
                 if (oBinding) {
-                    oBinding.refresh();
+                    try {
+                        // Method 1: Force refresh from server to get original data
+                        oBinding.refresh(true); // true = force refresh from server
+                        console.log("Forced table refresh from database to show original data");
+                    } catch (refreshError) {
+                        console.log("Refresh failed due to pending changes, trying alternative approach:", refreshError);
+                        
+                        // Alternative: Manually read data from database and set it back
+                        if (oContext && oContext.getPath) {
+                            const sContextPath = oContext.getPath();
+                            console.log("Manually reading original data from database for:", sContextPath);
+                            
+                            // Try to read the original data from the server
+                            oModel.read(sContextPath, {
+                                success: function(oData) {
+                                    console.log("Successfully read original data from database:", oData);
+                                    
+                                    // Set the original data back to the context
+                                    Object.keys(oData).forEach(sKey => {
+                                        if (sKey !== '_originalData' && sKey !== 'isEditable' && sKey !== '_hasChanged') {
+                                            try {
+                                                oContext.setProperty(sKey, oData[sKey]);
+                                                console.log(`Restored property ${sKey} from database:`, oData[sKey]);
+                                            } catch (propError) {
+                                                console.warn(`Failed to restore property ${sKey}:`, propError);
+                                            }
+                                        }
+                                    });
+                                },
+                                error: function(error) {
+                                    console.log("Failed to read original data from database:", error);
+                                }
+                            });
+                        }
+                    }
+                    
+                    // Method 2: Try to clear cache and refresh
+                    try {
+                        if (oBinding.clearCache) {
+                            oBinding.clearCache();
+                            console.log("Cleared binding cache");
+                        }
+                        oBinding.refresh(true);
+                        console.log("Refreshed after clearing cache");
+                    } catch (cacheError) {
+                        console.log("Cache clear not available:", cacheError);
+                    }
                 }
+                
+                // Also refresh the specific context from database
+                if (oContext && oContext.refresh) {
+                    try {
+                        oContext.refresh(true); // true = force refresh from server
+                        console.log("Refreshed specific context from database");
+                    } catch (refreshError) {
+                        console.log("Error refreshing context from database:", refreshError);
+                    }
+                }
+                
+                // Method 3: Force complete table re-render
+                try {
+                    const oInnerTable = oTable._oTable;
+                    if (oInnerTable && oInnerTable.invalidate) {
+                        oInnerTable.invalidate();
+                        console.log("Invalidated inner table to force re-render");
+                    }
+                } catch (invalidateError) {
+                    console.log("Table invalidation not available:", invalidateError);
+                }
+                
+                // 7. 🚨 CRITICAL: Force discard all pending changes for this specific context
+                try {
+                    // Get the OData model and check for pending changes
+                    const oModel = this.getView().getModel();
+                    if (oModel) {
+                        console.log("Attempting to discard OData changes...");
+                        
+                        // Method 1: Try to reset changes for this specific context
+                        if (oContext && oContext.getPath) {
+                            const sContextPath = oContext.getPath();
+                            console.log("Discarding changes for context:", sContextPath);
+                            
+                            // Force refresh the specific context
+                            oContext.refresh();
+                            console.log("Refreshed specific context to discard changes");
+                        }
+                        
+                        // Method 2: Try to use model's reset functionality
+                        if (oModel.resetChanges) {
+                            // Get all pending changes
+                            const aPendingChanges = oModel.getPendingChanges ? oModel.getPendingChanges() : [];
+                            console.log("Pending changes before discard:", aPendingChanges);
+                            
+                            // Try to reset only changes for this specific context
+                            if (oContext && oContext.getPath) {
+                                const sContextPath = oContext.getPath();
+                                const aContextChanges = aPendingChanges.filter(change => 
+                                    change.context && change.context.getPath && change.context.getPath() === sContextPath
+                                );
+                                
+                                if (aContextChanges.length > 0) {
+                                    console.log("Found changes for this context, attempting to discard:", aContextChanges);
+                                    // Force refresh to discard changes
+                                    oContext.refresh();
+                                }
+                            }
+                        }
+                    }
+                } catch (modelError) {
+                    console.log("Error accessing model changes:", modelError);
+                }
+                
+                // 8. Additional refresh attempt to ensure UI shows original data from database
+                setTimeout(() => {
+                    if (oBinding) {
+                        // Force refresh from server to ensure UI shows original data
+                        oBinding.refresh(true);
+                        console.log("Secondary refresh from database to show original data");
+                    }
+                    
+                    // Also try to refresh the specific context again
+                    if (oContext && oContext.refresh) {
+                        try {
+                            oContext.refresh(true);
+                            console.log("Secondary context refresh from database");
+                        } catch (error) {
+                            console.log("Secondary context refresh failed:", error);
+                        }
+                    }
+                }, 100);
+                
+                // 9. Final refresh attempt to ensure UI is completely updated
+                setTimeout(() => {
+                    if (oBinding) {
+                        oBinding.refresh(true);
+                        console.log("Final refresh from database to ensure original data is shown");
+                    }
+                    
+                    // 🚨 CRITICAL: Force table re-render to show original data
+                    try {
+                        const oInnerTable = oTable._oTable;
+                        if (oInnerTable) {
+                            // Force complete re-render of the table
+                            if (oInnerTable.rerender) {
+                                oInnerTable.rerender();
+                                console.log("Forced table re-render to show original data");
+                            }
+                            
+                            // Also try to invalidate and refresh
+                            if (oInnerTable.invalidate) {
+                                oInnerTable.invalidate();
+                                console.log("Invalidated table to force re-render");
+                            }
+                        }
+                    } catch (rerenderError) {
+                        console.log("Table re-render failed:", rerenderError);
+                    }
+                }, 300);
 
                 // 7. Additional verification
                 setTimeout(() => {
@@ -764,11 +1093,8 @@ sap.ui.define([
                 }
             }
             
-            // Reset any pending changes
-            const oModel = this.getView().getModel();
-            if (oModel && oModel.resetChanges) {
-                oModel.resetChanges();
-            }
+            // DON'T reset all changes - this would discard newly added rows
+            console.log("Skipping global reset to preserve new rows");
         },
 
         // Debug method to check current edit state
@@ -832,6 +1158,59 @@ sap.ui.define([
             this._performCancel();
         },
         
+        // Test delete method for debugging
+        testDeleteDirect: function () {
+            console.log("=== [TEST] Direct delete test ===");
+            const oView = this.getView();
+            const oTable = this.byId("Customers");
+            const aSelectedContexts = oTable.getSelectedContexts?.() || [];
+            
+            if (aSelectedContexts.length === 0) {
+                console.log("No contexts selected for delete test");
+                return;
+            }
+            
+            console.log(`Testing delete for ${aSelectedContexts.length} contexts`);
+            
+            aSelectedContexts.forEach((oContext, index) => {
+                console.log(`Test delete ${index + 1}:`, oContext.getPath());
+                console.log("Context object:", oContext);
+                console.log("Context methods:", Object.getOwnPropertyNames(oContext));
+                
+                // Test if delete method exists
+                if (typeof oContext.delete === 'function') {
+                    console.log("✅ Delete method exists");
+                } else {
+                    console.log("❌ Delete method does not exist");
+                }
+            });
+        },
+
+        // Official SAP pattern: Handle UI changes state
+        _setUIChanges: function (bHasChanges) {
+            try {
+                const oView = this.getView();
+                const oAppModel = oView.getModel("appView");
+                
+                if (oAppModel) {
+                    oAppModel.setProperty("/hasUIChanges", bHasChanges);
+                    console.log(`UI changes state set to: ${bHasChanges}`);
+                } else {
+                    console.log("App model not found, creating new one");
+                    const oViewModel = new JSONModel({
+                        busy: false,
+                        hasUIChanges: bHasChanges,
+                        usernameEmpty: false,
+                        order: 0
+                    });
+                    oView.setModel(oViewModel, "appView");
+                    console.log(`New app model created with UI changes: ${bHasChanges}`);
+                }
+            } catch (error) {
+                console.log("Error setting UI changes state:", error);
+            }
+        },
+
         // Test cancel method for debugging
         testCancelDirect: function () {
             console.log("=== [TEST] Direct cancel test ===");
@@ -851,11 +1230,8 @@ sap.ui.define([
                             oEditModel.setProperty("/editingPath", "");
             oEditModel.setProperty("/mode", null);
             
-            // Reset model changes
-            const oModel = oView.getModel();
-            if (oModel && oModel.resetChanges) {
-                oModel.resetChanges();
-            }
+            // DON'T reset all changes - this would discard newly added rows
+            console.log("Skipping global reset to preserve new rows");
             
             // Force table refresh
             const oTable = this.byId("Customers");
@@ -1009,10 +1385,8 @@ sap.ui.define([
             const oEditModel = oView.getModel("edit");
             
             try {
-                // 1. Reset OData model completely
-                if (oModel && oModel.resetChanges) {
-                    oModel.resetChanges();
-                }
+                // 1. DON'T reset OData model completely - this would discard newly added rows
+                console.log("Skipping global reset to preserve new rows");
                 
                 // 2. Clear all edit state
                 oEditModel.setProperty("/editingPath", "");
@@ -1161,6 +1535,16 @@ sap.ui.define([
                                 oContext.setProperty(sProp, vVal, GROUP_ID); // ✅ Assign to group
                             }
                         });
+                        
+                        // 🚨 CRITICAL: Remove client-side only properties before sending to server
+                        const oData = oContext.getObject();
+                        if (oData) {
+                            delete oData._isNew;
+                            delete oData.isEditable;
+                            delete oData._hasChanged;
+                            delete oData._originalData;
+                            console.log(`[MULTI-SAVE] Cleaned client-side properties for row ${index + 1}`);
+                        }
                     }
                     });
                 }
@@ -1212,9 +1596,9 @@ sap.ui.define([
             }
         },
 
-        // 🚀 ROBUST CSV EXPORT (Based on SAP Community Best Practices)
-        onCSVExport: function (oEvent) {
-            console.log("=== [CSV-EXPORT] Function called ===");
+        // 🚀 TEMPLATE DOWNLOADER (Headers Only CSV)
+        onTemplateDownload: function (oEvent) {
+            console.log("=== [TEMPLATE-DOWNLOAD] Function called ===");
             console.log("Event object:", oEvent);
             console.log("Event source:", oEvent.getSource());
             
@@ -1399,12 +1783,9 @@ sap.ui.define([
                     sap.m.MessageBox.error("Download not supported in this browser.");
                     return;
                 }
-
-                sap.m.MessageToast.show(`CSV exported successfully: ${aData.length} rows`);
-
             } catch (error) {
-                console.error("CSV export error:", error);
-                sap.m.MessageBox.error("Failed to export CSV: " + error.message);
+                console.error("Template download error:", error);
+                sap.m.MessageBox.error("Failed to download template: " + error.message);
             }
         },
 
@@ -1578,6 +1959,16 @@ sap.ui.define([
                             
                             if (oNewContext) {
                                 console.log("Direct context creation successful:", oNewContext.getPath());
+                                
+                                // 🚨 Add client-side properties AFTER context creation
+                                const oData = oNewContext.getObject();
+                                if (oData) {
+                                    oData._isNew = true;
+                                    oData.isEditable = true;
+                                    oData._hasChanged = false;
+                                    console.log("Added client-side properties to direct context");
+                                }
+                                
                                 this._executeAddWithRetry(oTable, null, sTableId, oNewContext);
                                 return;
                             }
@@ -1612,6 +2003,15 @@ sap.ui.define([
                 }
 
                 console.log("New context created:", oNewContext.getPath());
+
+                // 🚨 Add client-side properties AFTER context creation (not in the data sent to server)
+                const oData = oNewContext.getObject();
+                if (oData) {
+                    oData._isNew = true;
+                    oData.isEditable = true;
+                    oData._hasChanged = false;
+                    console.log("Added client-side properties to new context");
+                }
 
                 // Set the new row in edit mode
                 const oEditModel = this.getView().getModel("edit");
@@ -1704,6 +2104,15 @@ sap.ui.define([
                     }
 
                     console.log("Retry - New context created:", oNewContext.getPath());
+                    
+                    // 🚨 Add client-side properties AFTER context creation
+                    const oData = oNewContext.getObject();
+                    if (oData) {
+                        oData._isNew = true;
+                        oData.isEditable = true;
+                        oData._hasChanged = false;
+                        console.log("Added client-side properties to retry context");
+                    }
                 } else if (oNewContext) {
                     console.log("Using existing context:", oNewContext.getPath());
                 } else {
@@ -1813,10 +2222,8 @@ sap.ui.define([
                 oEmptyData.status = "A"; // Default to Allocated
             }
 
-            // Mark as new row
-            oEmptyData._isNew = true;
-            oEmptyData.isEditable = true;
-
+            // 🚨 DON'T add client-side properties to the data that goes to server
+            // These properties are added separately after context creation
             return oEmptyData;
         },
 
