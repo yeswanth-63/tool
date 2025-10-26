@@ -21,7 +21,7 @@ sap.ui.define([
             oSideNavigation.setExpanded(!bExpanded);
         },
 
-        onItemSelect: async function (oEvent) {
+        onItemSelect: function (oEvent) {
             const sKey = oEvent.getParameter("item").getKey();
             const oNavContainer = this.byId("pageContainer");
 
@@ -43,12 +43,6 @@ sap.ui.define([
 
             if (!sPageId) {
                 console.warn("No page mapped for key:", sKey);
-                return;
-            }
-
-            // Guard: prompt for unsaved changes before navigating
-            const bOkToNavigate = await this._guardUnsavedChanges();
-            if (!bOkToNavigate) {
                 return;
             }
 
@@ -179,69 +173,6 @@ sap.ui.define([
             }
         },
 
-        // Prompt user if there are unsaved changes; return true if navigation can proceed
-        _guardUnsavedChanges: async function () {
-            // Determine current visible page, then infer its table and buttons
-            const oNavContainer = this.byId("pageContainer");
-            const oCurrentPage = oNavContainer && oNavContainer.getCurrentPage && oNavContainer.getCurrentPage();
-            const sLocalPageId = oCurrentPage && oCurrentPage.getId && oCurrentPage.getId().split("--").pop();
-
-            const pageToTable = {
-                customersPage: "Customers",
-                employeesPage: "Employees",
-                opportunitiesPage: "Opportunities",
-                projectsPage: "Projects",
-                sapidPage: "SAPIdStatuses"
-            };
-            const tableToButtons = {
-                Customers: { save: "saveButton", cancel: "cancelButton" },
-                Employees: { save: "saveButton_emp", cancel: "cancelButton_emp" },
-                Opportunities: { save: "saveButton_oppr", cancel: "cancelButton_oppr" },
-                Projects: { save: "saveButton_proj", cancel: "cancelButton_proj" },
-                SAPIdStatuses: { save: "saveButton_sap", cancel: "cancelButton_sap" }
-            };
-
-            const sActiveTable = pageToTable[sLocalPageId] || null;
-            if (!sActiveTable) {
-                return true; // not on a data fragment
-            }
-
-            const ids = tableToButtons[sActiveTable];
-            const saveBtn = this.byId(ids.save);
-            const cancelBtn = this.byId(ids.cancel);
-            const bCurrentHasEnabled = (!!saveBtn && saveBtn.getEnabled && saveBtn.getEnabled()) || (!!cancelBtn && cancelBtn.getEnabled && cancelBtn.getEnabled());
-
-            if (!bCurrentHasEnabled) {
-                return true; // nothing to guard in current fragment
-            }
-
-            return new Promise((resolve) => {
-                sap.m.MessageBox.warning(
-                    "You have unsaved changes. What would you like to do?",
-                    {
-                        actions: ["Save", "Discard", "Stay"],
-                        emphasizedAction: "Save",
-                        onClose: async (sAction) => {
-                            if (sAction === "Stay") {
-                                resolve(false);
-                                return;
-                            }
-                            // Execute action for CURRENT fragment only (based on visible page)
-                            if (sAction === "Save") {
-                                const oBtn = this.byId(ids.save);
-                                if (oBtn) {
-                                    try { await this.onSaveButtonPress({ getSource: () => oBtn }); } catch (e) {}
-                                }
-                            } else if (sAction === "Discard") {
-                                try { CustomUtility.prototype.cancelForTableImmediate.call(this, sActiveTable); } catch (e) {}
-                            }
-                            resolve(true);
-                        }
-                    }
-                );
-            });
-        },
-
         // Include all methods from CustomUtility
         initializeTable: CustomUtility.prototype.initializeTable,
         _getPersonsBinding: CustomUtility.prototype._getPersonsBinding,
@@ -270,26 +201,16 @@ sap.ui.define([
         onSelectionChange:CustomUtility.prototype.onSelectionChange,
         onDeletePress:CustomUtility.prototype.onDeletePress,
         onEditPress:CustomUtility.prototype.onEditPress,
-        onAdd:CustomUtility.prototype.onAdd,
         onSaveButtonPress:CustomUtility.prototype.onSaveButtonPress,
         onCancelButtonPress:CustomUtility.prototype.onCancelButtonPress,
+        onAdd:CustomUtility.prototype.onAdd,
         onCSVExport:CustomUtility.prototype.onCSVExport,
         onTemplateDownload:CustomUtility.prototype.onTemplateDownload,
-        forceExitEditMode:CustomUtility.prototype.forceExitEditMode,
-        debugEditState:CustomUtility.prototype.debugEditState,
-        aggressiveCancel:CustomUtility.prototype.aggressiveCancel,
-        testCancel:CustomUtility.prototype.testCancel,
-        directCancel:CustomUtility.prototype.directCancel,
-        simpleCancel:CustomUtility.prototype.simpleCancel,
-        // Helpers needed by onAdd flow
-        _createEmptyRowData: CustomUtility.prototype._createEmptyRowData,
-        _executeAddWithRetry: CustomUtility.prototype._executeAddWithRetry,
-        _resolveContextByPath: CustomUtility.prototype._resolveContextByPath,
-        _getRowBinding: CustomUtility.prototype._getRowBinding,
-        // helper used by onAdd to detect the correct MDC table from the pressed button
-        _findMdcTableFromSource: CustomUtility.prototype._findMdcTableFromSource,
-        // helper used by save to isolate groups per fragment/table
-        _getGroupIdForTable: CustomUtility.prototype._getGroupIdForTable
+        _createEmptyRowData:CustomUtility.prototype._createEmptyRowData,
+        _executeAddWithRetry:CustomUtility.prototype._executeAddWithRetry,
+        _resolveContextByPath:CustomUtility.prototype._resolveContextByPath,
+        _getRowBinding:CustomUtility.prototype._getRowBinding,
+        testCancelDirect:CustomUtility.prototype.testCancelDirect
 
         
     });

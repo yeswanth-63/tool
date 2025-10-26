@@ -54,6 +54,7 @@
                     <Button icon="sap-icon://edit" id="btnEdit_cus" tooltip="Edit" press="onEditPress" enabled="false"/>
                     <Button icon="sap-icon://excel-attachment" id="btnCSV_cus" tooltip="Export CSV" press="onCSVExport"/>
                     <Button icon="sap-icon://document" id="btnTemplate_cus" tooltip="Download Template" press="onTemplateDownload"/>
+                    <Button text="Test Cancel" id="btnTestCancel" tooltip="Test Direct Cancel" press="testCancelDirect"/>
                 </OverflowToolbar>
             </mdc:actions>
             <mdc:copyProvider>

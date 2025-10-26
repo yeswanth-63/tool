@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Save/Cancel Functionality</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>Save/Cancel Button Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Steps:</h2>
+        <ol>
+            <li>Open the application in browser</li>
+            <li>Navigate to Customers table</li>
+            <li>Select a row and click "Edit" button</li>
+            <li>Verify Save and Cancel buttons are enabled</li>
+            <li>Make changes to the row data</li>
+            <li>Click "Save" - should save changes and disable Save/Cancel buttons</li>
+            <li>Select another row and click "Edit"</li>
+            <li>Make changes and click "Cancel" - should discard changes</li>
+            <li><strong>NEW:</strong> Use "Test Cancel" button to test direct cancel without confirmation</li>
+        </ol>
+    </div>
+    
+    <div class="test-section">
+        <h2>Expected Behavior:</h2>
+        <ul>
+            <li class="success">✅ Save button should be enabled when editing</li>
+            <li class="success">✅ Cancel button should be enabled when editing</li>
+            <li class="success">✅ Save should commit changes to backend</li>
+            <li class="success">✅ Cancel should discard changes and restore original data</li>
+            <li class="success">✅ Buttons should be disabled after Save/Cancel</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h2>Console Logs to Check:</h2>
+        <ul>
+            <li class="info">🔍 Look for: "=== [SINGLE-SAVE] Saving 1 row ==="</li>
+            <li class="info">🔍 Look for: "=== [SINGLE-CANCEL] Canceling 1 row ==="</li>
+            <li class="info">🔍 Look for: "Changes saved successfully"</li>
+            <li class="info">🔍 Look for: "Edit mode:" and "editingPath:" logs</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h2>Common Issues:</h2>
+        <ul>
+            <li class="error">❌ If Save/Cancel buttons don't enable: Check button wiring in Home.controller.js</li>
+            <li class="error">❌ If "Unable to find edited context": Check _resolveContextByPath method</li>
+            <li class="error">❌ If changes don't save: Check OData model submitBatch</li>
+            <li class="error">❌ If edit mode doesn't work: Check delegate editMode formatter</li>
+            <li class="error">❌ If Cancel fails: Check console for specific error details</li>
+            <li class="error">❌ If "Error discarding changes": Check _originalData restoration logic</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h2>Multi-Row Test:</h2>
+        <ol>
+            <li>Select multiple rows</li>
+            <li>Click "Edit" - should enable Save/Cancel for all selected rows</li>
+            <li>Make changes to multiple rows</li>
+            <li>Click "Save" - should save all changes in one batch</li>
+        </ol>
+    </div>
+    
+    <div class="test-section">
+        <h2>Add Row Test (All Fragments):</h2>
+        <ol>
+            <li><strong>Customers:</strong> Click "Add" button → should add to Customers table</li>
+            <li><strong>Employees:</strong> Click "Add" button → should add to Employees table</li>
+            <li><strong>Opportunities:</strong> Click "Add" button → should add to Opportunities table</li>
+            <li><strong>Projects:</strong> Click "Add" button → should add to Projects table</li>
+            <li><strong>SAPId:</strong> Click "Add" button → should add to SAPIdStatuses table</li>
+            <li>Fill in data for new rows</li>
+            <li>Click "Save" - should create all new rows</li>
+            <li>Or click "Cancel" - should remove all new rows</li>
+        </ol>
+    </div>
+</body>
+</html>

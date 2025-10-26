@@ -49,7 +49,7 @@
                         />
                     </HBox>
                     <!-- Action Buttons -->
-                    <Button icon="sap-icon://add" tooltip="Add" press="onAdd"/>
+                    <Button icon="sap-icon://add" id="btnAdd_oppr" tooltip="Add" press="onAdd"/>
                     <Button icon="sap-icon://delete" id="btnDelete_oppr"  tooltip="Delete_oppr" press="onDeletePress" enabled="false"/>
                     <Button icon="sap-icon://edit" id="btnEdit_oppr" tooltip="Edit_oppr" press="onEditPress" enabled="false"/>
                     <Button icon="sap-icon://excel-attachment" id="btnCSV_oppr" tooltip="Export CSV" press="onCSVExport"/>

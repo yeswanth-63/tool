@@ -282,10 +282,10 @@ sap.ui.define([
             // Button mapping for all tables
             const buttonMap = {
                 "Customers": { edit: "btnEdit_cus", delete: "btnDelete_cus", save: "saveButton", cancel: "cancelButton", add: "btnAdd" },
-                "Employees": { edit: "Edit_emp", delete: "Delete_emp", save: "saveButton_emp", cancel: "cancelButton_emp", add: "btnAdd" },
-                "Opportunities": { edit: "btnEdit_oppr", delete: "btnDelete_oppr", save: "saveButton_oppr", cancel: "cancelButton_oppr", add: "btnAdd" },
-                "Projects": { edit: "btnEdit_proj", delete: "btnDelete_proj", save: "saveButton_proj", cancel: "cancelButton_proj", add: "btnAdd" },
-                "SAPIdStatuses": { edit: "btnEdit_sap", delete: "btnDelete_sap", save: "saveButton_sap", cancel: "cancelButton_sap", add: "btnAdd" }
+                "Employees": { edit: "Edit_emp", delete: "Delete_emp", save: "saveButton_emp", cancel: "cancelButton_emp", add: "btnAdd_emp" },
+                "Opportunities": { edit: "btnEdit_oppr", delete: "btnDelete_oppr", save: "saveButton_oppr", cancel: "cancelButton_oppr", add: "btnAdd_oppr" },
+                "Projects": { edit: "btnEdit_proj", delete: "btnDelete_proj", save: "saveButton_proj", cancel: "cancelButton_proj", add: "btnAdd_proj" },
+                "SAPIdStatuses": { edit: "btnEdit_sap", delete: "btnDelete_sap", save: "saveButton_sap", cancel: "cancelButton_sap", add: "btnAdd_sap" }
             };
 
             // Determine which table this edit is for
@@ -327,70 +327,6 @@ sap.ui.define([
 
             // Track ALL editing paths in edit model (comma-separated)
             const oEditModel = this.getView().getModel("edit");
-            // Scope edit state to this table to avoid cross-fragment interference
-            const sPrevTableForEdit = oEditModel.getProperty("/tableId");
-            if (sPrevTableForEdit && sPrevTableForEdit !== sTableId) {
-                // CRITICAL: Discard any unsaved changes from previous fragment to prevent cross-fragment saves
-                const sPrevPath = oEditModel.getProperty("/editingPath");
-                const sPrevMode = oEditModel.getProperty("/mode");
-                
-                if (sPrevPath && (sPrevMode === "add" || sPrevMode === "add-multi" || sPrevMode === "multi-edit")) {
-                    console.log(`[FRAGMENT-SWITCH] Discarding unsaved changes from ${sPrevTableForEdit}`);
-                    const oPrevTable = this.byId(sPrevTableForEdit);
-                    if (oPrevTable) {
-                        const aPrevPaths = sPrevPath.split(",").filter(Boolean);
-                        aPrevPaths.forEach((sPath) => {
-                            const oContext = this._resolveContextByPath(oPrevTable, sPath);
-                            if (oContext) {
-                                const oData = oContext.getObject();
-                                // Delete transient rows
-                                if (oData._isNew || (typeof oContext.isTransient === "function" && oContext.isTransient())) {
-                                    try {
-                                        oContext.delete();
-                                        console.log(`[FRAGMENT-SWITCH] Deleted transient row: ${sPath}`);
-                                    } catch (e) {
-                                        console.log(`[FRAGMENT-SWITCH] Error deleting transient row: ${e.message}`);
-                                    }
-                                }
-                                // Restore original data for edited rows
-                                else if (oData._originalData) {
-                                    Object.keys(oData._originalData).forEach(sKey => {
-                                        if (sKey !== '_originalData' && sKey !== 'isEditable' && sKey !== '_hasChanged') {
-                                            oContext.setProperty(sKey, oData._originalData[sKey]);
-                                        }
-                                    });
-                                    delete oData._originalData;
-                                    delete oData.isEditable;
-                                    console.log(`[FRAGMENT-SWITCH] Restored original data for: ${sPath}`);
-                                }
-                            }
-                        });
-                        // Refresh previous table
-                        oPrevTable.getBinding("items")?.refresh();
-                    }
-                }
-                
-                // Clear previous table's edit state and reset its buttons
-                oEditModel.setProperty("/editingPath", "");
-                oEditModel.setProperty("/mode", null);
-                // Reset previous table's buttons
-                const prevButtonMap = {
-                    "Customers": { edit: "btnEdit_cus", delete: "btnDelete_cus", save: "saveButton", cancel: "cancelButton", add: "btnAdd" },
-                    "Employees": { edit: "Edit_emp", delete: "Delete_emp", save: "saveButton_emp", cancel: "cancelButton_emp", add: "btnAdd" },
-                    "Opportunities": { edit: "btnEdit_oppr", delete: "btnDelete_oppr", save: "saveButton_oppr", cancel: "cancelButton_oppr", add: "btnAdd" },
-                    "Projects": { edit: "btnEdit_proj", delete: "btnDelete_proj", save: "saveButton_proj", cancel: "cancelButton_proj", add: "btnAdd" },
-                    "SAPIdStatuses": { edit: "btnEdit_sap", delete: "btnDelete_sap", save: "saveButton_sap", cancel: "cancelButton_sap", add: "btnAdd" }
-                };
-                const prevConfig = prevButtonMap[sPrevTableForEdit];
-                if (prevConfig) {
-                    this.byId(prevConfig.save)?.setEnabled(false);
-                    this.byId(prevConfig.cancel)?.setEnabled(false);
-                    this.byId(prevConfig.edit)?.setEnabled(false);
-                    this.byId(prevConfig.delete)?.setEnabled(false);
-                    this.byId(prevConfig.add)?.setEnabled(true);
-                }
-            }
-            oEditModel.setProperty("/tableId", sTableId);
             const sEditingPaths = aEditingPaths.join(",");
             oEditModel.setProperty("/editingPath", sEditingPaths);
             oEditModel.setProperty("/editingContexts", aEditingContexts.length);
@@ -424,10 +360,10 @@ sap.ui.define([
             // Button mapping for all tables
             const buttonMap = {
                 "Customers": { edit: "btnEdit_cus", delete: "btnDelete_cus", save: "saveButton", cancel: "cancelButton", add: "btnAdd" },
-                "Employees": { edit: "Edit_emp", delete: "Delete_emp", save: "saveButton_emp", cancel: "cancelButton_emp", add: "btnAdd" },
-                "Opportunities": { edit: "btnEdit_oppr", delete: "btnDelete_oppr", save: "saveButton_oppr", cancel: "cancelButton_oppr", add: "btnAdd" },
-                "Projects": { edit: "btnEdit_proj", delete: "btnDelete_proj", save: "saveButton_proj", cancel: "cancelButton_proj", add: "btnAdd" },
-                "SAPIdStatuses": { edit: "btnEdit_sap", delete: "btnDelete_sap", save: "saveButton_sap", cancel: "cancelButton_sap", add: "btnAdd" }
+                "Employees": { edit: "Edit_emp", delete: "Delete_emp", save: "saveButton_emp", cancel: "cancelButton_emp", add: "btnAdd_emp" },
+                "Opportunities": { edit: "btnEdit_oppr", delete: "btnDelete_oppr", save: "saveButton_oppr", cancel: "cancelButton_oppr", add: "btnAdd_oppr" },
+                "Projects": { edit: "btnEdit_proj", delete: "btnDelete_proj", save: "saveButton_proj", cancel: "cancelButton_proj", add: "btnAdd_proj" },
+                "SAPIdStatuses": { edit: "btnEdit_sap", delete: "btnDelete_sap", save: "saveButton_sap", cancel: "cancelButton_sap", add: "btnAdd_sap" }
             };
 
             // Determine which table this add is for
@@ -445,18 +381,9 @@ sap.ui.define([
                 return;
             }
             try {
-                const sGroupId = this._getGroupIdForTable(sTableId);
-                this._ensureBindingGroup(oBinding, sGroupId);
-                const oContext = oBinding.create({}, false, sGroupId);
+                const oContext = oBinding.create({}, false, "changesGroup");
                 if (oContext && oContext.getPath) {
                     const oEditModel = this.getView().getModel("edit");
-                    // Reset cross-table state if switching tables for add
-                    const sPrevTable = oEditModel.getProperty("/tableId");
-                    if (sPrevTable && sPrevTable !== sTableId) {
-                        oEditModel.setProperty("/editingPath", "");
-                        oEditModel.setProperty("/mode", null);
-                    }
-                    oEditModel.setProperty("/tableId", sTableId);
                     oEditModel.setProperty("/editingPath", oContext.getPath());
                     oEditModel.setProperty("/mode", "add");
 
@@ -481,10 +408,10 @@ sap.ui.define([
             // Button mapping for all tables
             const buttonMap = {
                 "Customers": { edit: "btnEdit_cus", delete: "btnDelete_cus", save: "saveButton", cancel: "cancelButton", add: "btnAdd" },
-                "Employees": { edit: "Edit_emp", delete: "Delete_emp", save: "saveButton_emp", cancel: "cancelButton_emp", add: "btnAdd" },
-                "Opportunities": { edit: "btnEdit_oppr", delete: "btnDelete_oppr", save: "saveButton_oppr", cancel: "cancelButton_oppr", add: "btnAdd" },
-                "Projects": { edit: "btnEdit_proj", delete: "btnDelete_proj", save: "saveButton_proj", cancel: "cancelButton_proj", add: "btnAdd" },
-                "SAPIdStatuses": { edit: "btnEdit_sap", delete: "btnDelete_sap", save: "saveButton_sap", cancel: "cancelButton_sap", add: "btnAdd" }
+                "Employees": { edit: "Edit_emp", delete: "Delete_emp", save: "saveButton_emp", cancel: "cancelButton_emp", add: "btnAdd_emp" },
+                "Opportunities": { edit: "btnEdit_oppr", delete: "btnDelete_oppr", save: "saveButton_oppr", cancel: "cancelButton_oppr", add: "btnAdd_oppr" },
+                "Projects": { edit: "btnEdit_proj", delete: "btnDelete_proj", save: "saveButton_proj", cancel: "cancelButton_proj", add: "btnAdd_proj" },
+                "SAPIdStatuses": { edit: "btnEdit_sap", delete: "btnDelete_sap", save: "saveButton_sap", cancel: "cancelButton_sap", add: "btnAdd_sap" }
             };
 
             // Determine which table this cancel is for
@@ -511,13 +438,6 @@ sap.ui.define([
                             const oEditModel = oView.getModel("edit");
                             const sPath = oEditModel.getProperty("/editingPath");
                             const sMode = oEditModel.getProperty("/mode");
-                            const sEditTableId = oEditModel.getProperty("/tableId");
-
-                            // Guard: only act on state belonging to this table
-                            if (sEditTableId && sEditTableId !== sTableId) {
-                                sap.m.MessageToast.show("No row is in edit mode for this table.");
-                                return;
-                            }
 
                             console.log("Current editing path:", sPath);
                             console.log("Edit mode:", sMode);
@@ -534,7 +454,7 @@ sap.ui.define([
                             if ((sMode === "multi-edit" || sMode === "add-multi") && sPath.includes(",")) {
                                 // Multi cancel: resolve all paths from edit model to cancel/discard
                                 const aPaths = sPath.split(",").filter(Boolean);
-                                aContextsToCancel = aPaths.map((p)=> self._resolveContextByPath(oTable, p)).filter(Boolean);
+                                aContextsToCancel = aPaths.map(p => self._resolveContextByPath(oTable, p)).filter(Boolean);
                                 console.log(`=== [MULTI-CANCEL] Canceling ${aContextsToCancel.length} rows ===`);
                             } else {
                                 // Single row editing: resolve the specific context reliably
@@ -552,8 +472,11 @@ sap.ui.define([
                             }
 
                             try {
-                                // 1. First, let's debug the current state
-                                self.debugEditState();
+                                // 1. Debug the current state
+                                console.log("=== [CANCEL] Current Edit State ===");
+                                console.log("Edit Model:", oEditModel.getData());
+                                console.log("Editing Path:", sPath);
+                                console.log("Mode:", sMode);
 
                                 // 2. Do not reset all model changes here; cancel is scoped per-context
                                 //    We only delete the transient context or restore the single edited context below
@@ -562,50 +485,68 @@ sap.ui.define([
                                 aContextsToCancel.forEach((oContext, index) => {
                                     console.log(`[MULTI-CANCEL] Processing row ${index + 1}: ${oContext.getPath()}`);
                                     
-                                    const oData = oContext.getObject();
-                                    
-                                    // Handle new rows (transient or marked as new)
-                                    if (oData._isNew || (typeof oContext.isTransient === "function" && oContext.isTransient())) {
-                                        try {
-                                            oContext.delete();
-                                            console.log(`[MULTI-CANCEL] Deleted new/transient row ${index + 1}`);
-                                        } catch (e) {
-                                            console.log(`[MULTI-CANCEL] Error deleting transient row: ${e.message}`);
-                                        }
-                                        return; // Skip to next row
-                                    }
-                                    console.log(`[MULTI-CANCEL] Row ${index + 1} original data exists:`, !!oData._originalData);
-                                    
-                                    if (oData._originalData) {
-                                        console.log(`[MULTI-CANCEL] Restoring original data for row ${index + 1}...`);
-                                        // Use the same pattern as the working helper file
-                                        const oOriginalData = oData._originalData;
+                                    try {
+                                        const oData = oContext.getObject();
                                         
-                                        // Restore all original properties including dates
-                                        Object.keys(oOriginalData).forEach(sKey => {
-                                            if (sKey !== '_originalData' && sKey !== 'isEditable' && sKey !== '_hasChanged') {
-                                                // Special handling for date fields if needed
-                                                let vValue = oOriginalData[sKey];
-                                                if (vValue instanceof Date) {
-                                                    // Ensure we're setting a proper Date object
-                                                    vValue = new Date(vValue.getTime());
-                                                }
-                                                oContext.setProperty(sKey, vValue);
+                                        // Handle new rows (transient or marked as new)
+                                        if (oData._isNew || (typeof oContext.isTransient === "function" && oContext.isTransient())) {
+                                            try {
+                                                oContext.delete();
+                                                console.log(`[MULTI-CANCEL] Deleted new/transient row ${index + 1}`);
+                                            } catch (e) {
+                                                console.log(`[MULTI-CANCEL] Error deleting transient row: ${e.message}`);
                                             }
-                                        });
-
-                                        // Clean up the temporary properties
-                                        delete oData._originalData;
-                                        delete oData._hasChanged;
-                                        delete oData.isEditable;
+                                            return; // Skip to next row
+                                        }
                                         
-                                        console.log(`[MULTI-CANCEL] Restored original data for row ${index + 1}`);
+                                        console.log(`[MULTI-CANCEL] Row ${index + 1} original data exists:`, !!oData._originalData);
+                                        
+                                        if (oData._originalData) {
+                                            console.log(`[MULTI-CANCEL] Restoring original data for row ${index + 1}...`);
+                                            const oOriginalData = oData._originalData;
+                                            
+                                            // Restore all original properties
+                                            Object.keys(oOriginalData).forEach(sKey => {
+                                                if (sKey !== '_originalData' && sKey !== 'isEditable' && sKey !== '_hasChanged') {
+                                                    try {
+                                                        let vValue = oOriginalData[sKey];
+                                                        if (vValue instanceof Date) {
+                                                            vValue = new Date(vValue.getTime());
+                                                        }
+                                                        oContext.setProperty(sKey, vValue);
+                                                    } catch (propError) {
+                                                        console.warn(`[MULTI-CANCEL] Error restoring property ${sKey}:`, propError);
+                                                    }
+                                                }
+                                            });
+
+                                            // Clean up the temporary properties
+                                            delete oData._originalData;
+                                            delete oData._hasChanged;
+                                            delete oData.isEditable;
+                                            
+                                            console.log(`[MULTI-CANCEL] Restored original data for row ${index + 1}`);
+                                        } else {
+                                            console.warn(`[MULTI-CANCEL] No original data found for row ${index + 1}`);
+                                        }
+                                    } catch (contextError) {
+                                        console.error(`[MULTI-CANCEL] Error processing context ${index + 1}:`, contextError);
                                     }
                                 });
 
-                                // 4. Clear edit state using the working pattern
+                                // 4. Clear edit state and reset OData model changes
                                 oEditModel.setProperty("/editingPath", "");
                                 oEditModel.setProperty("/mode", null);
+                                
+                                // Reset any pending OData changes to prevent saving
+                                try {
+                                    if (oModel && oModel.resetChanges) {
+                                        oModel.resetChanges();
+                                        console.log("[MULTI-CANCEL] Reset OData model changes");
+                                    }
+                                } catch (resetError) {
+                                    console.warn("[MULTI-CANCEL] Error resetting model changes:", resetError);
+                                }
 
                                 // 5. Clear selection and reset buttons for the specific table
                                 oTable.clearSelection();
@@ -617,98 +558,89 @@ sap.ui.define([
                                 self.byId(config.delete)?.setEnabled(false); // Disable delete until new selection
                                 self.byId(config.add)?.setEnabled(true);
 
-                                // 6. Force table refresh
-                                const oBinding = oTable.getBinding("items");
-                                if (oBinding) {
-                                    oBinding.refresh();
+                                // 6. Force table refresh to exit edit mode
+                                try {
+                                    // Force refresh all bindings
+                                    const oBinding = oTable.getBinding("items");
+                                    if (oBinding) {
+                                        oBinding.refresh();
+                                    }
+                                    
+                                    const oRowBinding = oTable.getRowBinding && oTable.getRowBinding();
+                                    if (oRowBinding) {
+                                        oRowBinding.refresh();
+                                    }
+                                    
+                                    // Force refresh the table itself
+                                    if (oTable.refresh) {
+                                        oTable.refresh();
+                                    }
+                                    
+                                    // Clear selection to ensure clean state
+                                    oTable.clearSelection();
+                                    
+                                    // Force a complete table rebind to exit edit mode
+                                    setTimeout(() => {
+                                        try {
+                                            const oBinding2 = oTable.getBinding("items");
+                                            if (oBinding2) {
+                                                oBinding2.refresh();
+                                            }
+                                            console.log("[MULTI-CANCEL] Secondary refresh completed");
+                                        } catch (e) {
+                                            console.warn("[MULTI-CANCEL] Secondary refresh error:", e);
+                                        }
+                                    }, 100);
+                                    
+                                    console.log("[MULTI-CANCEL] Table refreshed and selection cleared");
+                                } catch (refreshError) {
+                                    console.warn("[MULTI-CANCEL] Error refreshing table:", refreshError);
                                 }
 
                                 // 7. Additional verification
                                 setTimeout(() => {
                                     console.log("=== [Controller] Post-cancel state check ===");
-                                    self.debugEditState();
+                                    console.log("Edit Model after cancel:", oEditModel.getData());
+                                    console.log("Save Button Enabled:", self.byId(config.save)?.getEnabled());
+                                    console.log("Cancel Button Enabled:", self.byId(config.cancel)?.getEnabled());
                                 }, 200);
 
+                                // 8. Force exit edit mode completely
+                                try {
+                                    // Force all cells to exit edit mode
+                                    const oInnerTable = oTable._oTable;
+                                    if (oInnerTable && oInnerTable.getItems) {
+                                        const aItems = oInnerTable.getItems();
+                                        aItems.forEach(item => {
+                                            if (item.getCells) {
+                                                item.getCells().forEach(cell => {
+                                                    if (cell.setEditable) {
+                                                        cell.setEditable(false);
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }
+                                    
+                                    console.log("[MULTI-CANCEL] Forced exit from edit mode");
+                                } catch (editModeError) {
+                                    console.warn("[MULTI-CANCEL] Error forcing exit from edit mode:", editModeError);
+                                }
+                                
                                 sap.m.MessageToast.show("Changes discarded successfully.");
                             } catch (error) {
                                 console.error("Error during cancel operation:", error);
-                                sap.m.MessageBox.error("Error discarding changes. Please try again.");
+                                console.error("Error details:", {
+                                    message: error.message,
+                                    stack: error.stack,
+                                    name: error.name
+                                });
+                                sap.m.MessageBox.error(`Error discarding changes: ${error.message}. Please check console for details.`);
                             }
                         }
                     }
                 }
             );
-        },
-
-        // Cancel for the given table immediately (no confirmation dialog)
-        cancelForTableImmediate: function (sTableId) {
-            try {
-                const buttonMap = {
-                    "Customers": { edit: "btnEdit_cus", delete: "btnDelete_cus", save: "saveButton", cancel: "cancelButton", add: "btnAdd" },
-                    "Employees": { edit: "Edit_emp", delete: "Delete_emp", save: "saveButton_emp", cancel: "cancelButton_emp", add: "btnAdd" },
-                    "Opportunities": { edit: "btnEdit_oppr", delete: "btnDelete_oppr", save: "saveButton_oppr", cancel: "cancelButton_oppr", add: "btnAdd" },
-                    "Projects": { edit: "btnEdit_proj", delete: "btnDelete_proj", save: "saveButton_proj", cancel: "cancelButton_proj", add: "btnAdd" },
-                    "SAPIdStatuses": { edit: "btnEdit_sap", delete: "btnDelete_sap", save: "saveButton_sap", cancel: "cancelButton_sap", add: "btnAdd" }
-                };
-
-                const oTable = this.byId(sTableId);
-                if (!oTable) { return; }
-                const oView = this.getView();
-                const oEditModel = oView.getModel("edit");
-                const sPath = oEditModel.getProperty("/editingPath");
-                const sMode = oEditModel.getProperty("/mode");
-
-                if (!sPath) { return; }
-
-                // Resolve contexts to cancel
-                let aContextsToCancel = [];
-                if ((sMode === "multi-edit" || sMode === "add-multi") && sPath.includes(",")) {
-                    const aPaths = sPath.split(",").filter(Boolean);
-                    aContextsToCancel = aPaths.map((p)=> this._resolveContextByPath(oTable, p)).filter(Boolean);
-                } else {
-                    const oContext = this._resolveContextByPath(oTable, sPath);
-                    if (oContext) { aContextsToCancel = [oContext]; }
-                }
-
-                // Process contexts
-                aContextsToCancel.forEach((oContext) => {
-                    const oData = oContext.getObject();
-                    if (oData && (oData._isNew || (typeof oContext.isTransient === "function" && oContext.isTransient()))) {
-                        try { oContext.delete(); } catch (e) {}
-                        return;
-                    }
-                    if (oData && oData._originalData) {
-                        Object.keys(oData._originalData).forEach((k)=>{
-                            if (k !== "_originalData" && k !== "isEditable" && k !== "_hasChanged") {
-                                oContext.setProperty(k, oData._originalData[k]);
-                            }
-                        });
-                        delete oData._originalData;
-                        delete oData.isEditable;
-                        delete oData._hasChanged;
-                    }
-                });
-
-                // Clear edit state
-                oEditModel.setProperty("/editingPath", "");
-                oEditModel.setProperty("/mode", null);
-
-                // Reset buttons
-                const config = buttonMap[sTableId];
-                this.byId(config.save)?.setEnabled(false);
-                this.byId(config.cancel)?.setEnabled(false);
-                this.byId(config.edit)?.setEnabled(false);
-                this.byId(config.delete)?.setEnabled(false);
-                this.byId(config.add)?.setEnabled(true);
-
-                // Refresh table and clear selection
-                oTable.clearSelection();
-                oTable.getBinding("items")?.refresh();
-
-                sap.m.MessageToast.show("Changes discarded successfully.");
-            } catch (e) {
-                // No-op
-            }
         },
 
         _performCancel: function () {
@@ -728,8 +660,9 @@ sap.ui.define([
             }
 
             try {
-                // 1. First, let's debug the current state
-                this.debugEditState();
+                // 1. Debug the current state
+                console.log("=== [CANCEL] Current Edit State ===");
+                console.log("Edit Model:", oEditModel.getData());
 
                 // 2. Reset any pending changes in the OData model
                 console.log("Resetting OData model changes...");
@@ -801,7 +734,7 @@ sap.ui.define([
                 // 7. Additional verification
                 setTimeout(() => {
                     console.log("=== [Controller] Post-cancel state check ===");
-                    this.debugEditState();
+                    console.log("Edit Model after cancel:", oEditModel.getData());
                 }, 200);
 
                 sap.m.MessageToast.show("Changes discarded successfully.");
@@ -885,11 +818,11 @@ sap.ui.define([
         // Test method to manually trigger cancel (for debugging)
         testCancel: function () {
             console.log("=== [TEST] Manual cancel test ===");
-            this.debugEditState();
+            console.log("Edit Model:", this.getView().getModel("edit").getData());
             this.aggressiveCancel();
             setTimeout(() => {
                 console.log("=== [TEST] Post-cancel state ===");
-                this.debugEditState();
+                console.log("Edit Model after cancel:", this.getView().getModel("edit").getData());
             }, 500);
         },
 
@@ -898,11 +831,56 @@ sap.ui.define([
             console.log("=== [Controller] Direct cancel (no confirmation) ===");
             this._performCancel();
         },
+        
+        // Test cancel method for debugging
+        testCancelDirect: function () {
+            console.log("=== [TEST] Direct cancel test ===");
+            const oView = this.getView();
+            const oEditModel = oView.getModel("edit");
+            const sPath = oEditModel.getProperty("/editingPath");
+            const sMode = oEditModel.getProperty("/mode");
+            
+            console.log("Current edit state:", { sPath, sMode });
+            
+            if (!sPath) {
+                sap.m.MessageToast.show("No row is in edit mode.");
+                return;
+            }
+            
+            // Force clear edit state
+                            oEditModel.setProperty("/editingPath", "");
+            oEditModel.setProperty("/mode", null);
+            
+            // Reset model changes
+            const oModel = oView.getModel();
+            if (oModel && oModel.resetChanges) {
+                oModel.resetChanges();
+            }
+            
+            // Force table refresh
+            const oTable = this.byId("Customers");
+            if (oTable) {
+                oTable.clearSelection();
+                const oBinding = oTable.getBinding("items");
+                if (oBinding) {
+                    oBinding.refresh();
+                }
+            }
+            
+            // Reset buttons
+            this.byId("saveButton")?.setEnabled(false);
+            this.byId("cancelButton")?.setEnabled(false);
+            this.byId("btnEdit_cus")?.setEnabled(false);
+            this.byId("btnDelete_cus")?.setEnabled(false);
+            this.byId("btnAdd")?.setEnabled(true);
+            
+            sap.m.MessageToast.show("Direct cancel completed");
+        },
 
         // Simple cancel method following the exact pattern from helper file
         simpleCancel: function () {
             console.log("=== [Controller] Simple cancel using helper pattern ===");
-            
+
             const oTable = this.byId("Customers");
             const oView = this.getView();
             const oModel = oView.getModel();
@@ -1100,56 +1078,16 @@ sap.ui.define([
             }
             return null;
         },
-        // Find the enclosing MDC Table from any button/control source
-        _findMdcTableFromSource: function (oSource) {
-            let oCurr = oSource;
-            for (let i = 0; i < 10 && oCurr; i++) {
-                if (oCurr.isA && oCurr.isA("sap.ui.mdc.Table")) {
-                    return oCurr;
-                }
-                if (typeof oCurr.getParent === "function") {
-                    oCurr = oCurr.getParent();
-                } else {
-                    break;
-                }
-            }
-            return null;
-        },
-        // Group IDs per table to isolate $batch submits
-        _getGroupIdForTable: function (sTableId) {
-            const m = {
-                Customers: "changesCustomers",
-                Employees: "changesEmployees",
-                Opportunities: "changesOpportunities",
-                Projects: "changesProjects",
-                SAPIdStatuses: "changesSAPIdStatuses"
-            };
-            return m[sTableId] || "changesGroup";
-        },
-        // Ensure a list binding uses the given $$groupId/$$updateGroupId (OData V4)
-        _ensureBindingGroup: function (oBinding, sGroupId) {
-            try {
-                if (oBinding && typeof oBinding.changeParameters === "function") {
-                    oBinding.changeParameters({
-                        "$$groupId": sGroupId,
-                        "$$updateGroupId": sGroupId
-                    });
-                }
-            } catch (e) {
-                // safe no-op
-                console.log("changeParameters not supported:", e && e.message);
-            }
-        },
         onSaveButtonPress: async function (oEvent) {
-            // group ID will be table-specific via _getGroupIdForTable
+            const GROUP_ID = "changesGroup"; // ✅ Define a consistent group ID
 
             // Button mapping for all tables
             const buttonMap = {
                 "Customers": { edit: "btnEdit_cus", delete: "btnDelete_cus", save: "saveButton", cancel: "cancelButton", add: "btnAdd" },
-                "Employees": { edit: "Edit_emp", delete: "Delete_emp", save: "saveButton_emp", cancel: "cancelButton_emp", add: "btnAdd" },
-                "Opportunities": { edit: "btnEdit_oppr", delete: "btnDelete_oppr", save: "saveButton_oppr", cancel: "cancelButton_oppr", add: "btnAdd" },
-                "Projects": { edit: "btnEdit_proj", delete: "btnDelete_proj", save: "saveButton_proj", cancel: "cancelButton_proj", add: "btnAdd" },
-                "SAPIdStatuses": { edit: "btnEdit_sap", delete: "btnDelete_sap", save: "saveButton_sap", cancel: "cancelButton_sap", add: "btnAdd" }
+                "Employees": { edit: "Edit_emp", delete: "Delete_emp", save: "saveButton_emp", cancel: "cancelButton_emp", add: "btnAdd_emp" },
+                "Opportunities": { edit: "btnEdit_oppr", delete: "btnDelete_oppr", save: "saveButton_oppr", cancel: "cancelButton_oppr", add: "btnAdd_oppr" },
+                "Projects": { edit: "btnEdit_proj", delete: "btnDelete_proj", save: "saveButton_proj", cancel: "cancelButton_proj", add: "btnAdd_proj" },
+                "SAPIdStatuses": { edit: "btnEdit_sap", delete: "btnDelete_sap", save: "saveButton_sap", cancel: "cancelButton_sap", add: "btnAdd_sap" }
             };
 
             // Determine which table this save is for
@@ -1165,13 +1103,6 @@ sap.ui.define([
             const oEditModel = oView.getModel("edit");
             const sPath = oEditModel.getProperty("/editingPath");
             const sMode = oEditModel.getProperty("/mode");
-            const sEditTableId = oEditModel.getProperty("/tableId");
-
-            // Guard: only act on state belonging to this table
-            if (sEditTableId && sEditTableId !== sTableId) {
-                sap.m.MessageToast.show("No row is in edit mode for this table.");
-                return;
-            }
 
             if (!sPath) {
                 sap.m.MessageToast.show("No row is in edit mode.");
@@ -1181,7 +1112,7 @@ sap.ui.define([
             // 🚀 MULTI-ROW SAVE: Handle multi-edit and multi-add
             let aContextsToSave = [];
             
-                if (sMode === "multi-edit" && sPath.includes(",")) {
+            if (sMode === "multi-edit" && sPath.includes(",")) {
                 // Multi-row editing: get all selected contexts
                 const aSelectedContexts = oTable.getSelectedContexts();
                 aContextsToSave = aSelectedContexts;
@@ -1189,22 +1120,22 @@ sap.ui.define([
             } else if (sMode === "add-multi" && sPath.includes(",")) {
                 // Multi-add: resolve all transient contexts from the stored paths
                 const aPaths = sPath.split(",").filter(Boolean);
-                aContextsToSave = aPaths.map((p)=> this._resolveContextByPath(oTable, p)).filter(Boolean);
+                aContextsToSave = aPaths.map(p => this._resolveContextByPath(oTable, p)).filter(Boolean);
                 console.log(`=== [MULTI-SAVE][ADD] Saving ${aContextsToSave.length} new rows ===`);
             } else {
                 // Single row editing: find the specific context
-                    let oContext = this._resolveContextByPath(oTable, sPath);
-                    if (!oContext) {
-                        // As a fallback, use first selected
-                        const aSelectedContexts = oTable.getSelectedContexts();
-                        oContext = aSelectedContexts && aSelectedContexts[0];
-                    }
+                let oContext = this._resolveContextByPath(oTable, sPath);
+                if (!oContext) {
+                    // As a fallback, use first selected
+                    const aSelectedContexts = oTable.getSelectedContexts();
+                    oContext = aSelectedContexts && aSelectedContexts[0];
+                }
             if (!oContext) {
                 sap.m.MessageBox.error("Unable to find edited context.");
                 return;
-                    }
-                    aContextsToSave = [oContext];
-                    console.log(`=== [SINGLE-SAVE] Saving 1 row ===`);
+                }
+                aContextsToSave = [oContext];
+                console.log(`=== [SINGLE-SAVE] Saving 1 row ===`);
             }
 
             this.getView().setBusy(true);
@@ -1227,17 +1158,15 @@ sap.ui.define([
                             if (oBinding?.getPath && cell.getValue) {
                                 const sProp = oBinding.getPath();
                                 const vVal = cell.getValue();
-                                const sGroupIdForProp = this._getGroupIdForTable(sTableId);
-                                oContext.setProperty(sProp, vVal, sGroupIdForProp);
+                                oContext.setProperty(sProp, vVal, GROUP_ID); // ✅ Assign to group
                             }
                         });
                     }
                     });
                 }
 
-                // 🔹 Submit batch ONLY for this table's group to avoid cross-fragment commits
-                const sGroupId = this._getGroupIdForTable(sTableId);
-                await oModel.submitBatch(sGroupId);
+                // 🔹 Submit batch with group ID
+                await oModel.submitBatch(GROUP_ID);
 
                 // 🔹 Clear the original data after successful save for ALL contexts
                 aContextsToSave.forEach((oContext, index) => {
@@ -1581,29 +1510,24 @@ sap.ui.define([
             console.log("=== [ADD] Function called ===");
             
             try {
-                // Determine the table from the pressed button by traversing up to sap.ui.mdc.Table
-                let oTable = null;
+                // Determine which table this add is for
+                let sTableId = "Customers"; // Default fallback
                 if (oEvent && oEvent.getSource) {
-                    oTable = this._findMdcTableFromSource(oEvent.getSource());
-                }
-                let sTableId = oTable && oTable.getId ? oTable.getId().split("--").pop() : "Customers";
-
-                // Fallback: derive table ID from button ID like other handlers
-                if (!oTable && oEvent && oEvent.getSource) {
                     const sButtonId = oEvent.getSource().getId().split("--").pop();
-                    if (sButtonId.includes("cus")) sTableId = "Customers";
-                    else if (sButtonId.includes("emp")) sTableId = "Employees";
-                    else if (sButtonId.includes("oppr")) sTableId = "Opportunities";
-                    else if (sButtonId.includes("proj")) sTableId = "Projects";
-                    else if (sButtonId.includes("sap")) sTableId = "SAPIdStatuses";
+                    console.log("Add Button ID:", sButtonId);
+                    // Map button IDs to table IDs
+                    if (sButtonId.includes("cus") || sButtonId === "btnAdd") sTableId = "Customers";
+                    else if (sButtonId.includes("emp") || sButtonId === "btnAdd_emp") sTableId = "Employees";
+                    else if (sButtonId.includes("oppr") || sButtonId === "btnAdd_oppr") sTableId = "Opportunities";
+                    else if (sButtonId.includes("proj") || sButtonId === "btnAdd_proj") sTableId = "Projects";
+                    else if (sButtonId.includes("sap") || sButtonId === "btnAdd_sap") sTableId = "SAPIdStatuses";
                 }
 
+                console.log("Table ID:", sTableId);
+                const oTable = this.byId(sTableId);
                 if (!oTable) {
-                    oTable = this.byId(sTableId);
-                }
-                if (!oTable) {
-                    console.error("Table not found for Add action");
-                    sap.m.MessageBox.error("Table not found. Please try again.");
+                    console.error("Table not found:", sTableId);
+                    sap.m.MessageBox.error(`Table '${sTableId}' not found.`);
                     return;
                 }
 
@@ -1719,10 +1643,10 @@ sap.ui.define([
                 // Enable Save and Cancel buttons, disable others
                 const buttonMap = {
                     "Customers": { edit: "btnEdit_cus", delete: "btnDelete_cus", save: "saveButton", cancel: "cancelButton", add: "btnAdd" },
-                    "Employees": { edit: "Edit_emp", delete: "Delete_emp", save: "saveButton_emp", cancel: "cancelButton_emp", add: "btnAdd" },
-                    "Opportunities": { edit: "btnEdit_oppr", delete: "btnDelete_oppr", save: "saveButton_oppr", cancel: "cancelButton_oppr", add: "btnAdd" },
-                    "Projects": { edit: "btnEdit_proj", delete: "btnDelete_proj", save: "saveButton_proj", cancel: "cancelButton_proj", add: "btnAdd" },
-                    "SAPIdStatuses": { edit: "btnEdit_sap", delete: "btnDelete_sap", save: "saveButton_sap", cancel: "cancelButton_sap", add: "btnAdd" }
+                    "Employees": { edit: "Edit_emp", delete: "Delete_emp", save: "saveButton_emp", cancel: "cancelButton_emp", add: "btnAdd_emp" },
+                    "Opportunities": { edit: "btnEdit_oppr", delete: "btnDelete_oppr", save: "saveButton_oppr", cancel: "cancelButton_oppr", add: "btnAdd_oppr" },
+                    "Projects": { edit: "btnEdit_proj", delete: "btnDelete_proj", save: "saveButton_proj", cancel: "cancelButton_proj", add: "btnAdd_proj" },
+                    "SAPIdStatuses": { edit: "btnEdit_sap", delete: "btnDelete_sap", save: "saveButton_sap", cancel: "cancelButton_sap", add: "btnAdd_sap" }
                 };
 
                 const config = buttonMap[sTableId];
@@ -1806,10 +1730,10 @@ sap.ui.define([
                 // Enable Save and Cancel buttons, disable others
                 const buttonMap = {
                     "Customers": { edit: "btnEdit_cus", delete: "btnDelete_cus", save: "saveButton", cancel: "cancelButton", add: "btnAdd" },
-                    "Employees": { edit: "Edit_emp", delete: "Delete_emp", save: "saveButton_emp", cancel: "cancelButton_emp", add: "btnAdd" },
-                    "Opportunities": { edit: "btnEdit_oppr", delete: "btnDelete_oppr", save: "saveButton_oppr", cancel: "cancelButton_oppr", add: "btnAdd" },
-                    "Projects": { edit: "btnEdit_proj", delete: "btnDelete_proj", save: "saveButton_proj", cancel: "cancelButton_proj", add: "btnAdd" },
-                    "SAPIdStatuses": { edit: "btnEdit_sap", delete: "btnDelete_sap", save: "saveButton_sap", cancel: "cancelButton_sap", add: "btnAdd" }
+                    "Employees": { edit: "Edit_emp", delete: "Delete_emp", save: "saveButton_emp", cancel: "cancelButton_emp", add: "btnAdd_emp" },
+                    "Opportunities": { edit: "btnEdit_oppr", delete: "btnDelete_oppr", save: "saveButton_oppr", cancel: "cancelButton_oppr", add: "btnAdd_oppr" },
+                    "Projects": { edit: "btnEdit_proj", delete: "btnDelete_proj", save: "saveButton_proj", cancel: "cancelButton_proj", add: "btnAdd_proj" },
+                    "SAPIdStatuses": { edit: "btnEdit_sap", delete: "btnDelete_sap", save: "saveButton_sap", cancel: "cancelButton_sap", add: "btnAdd_sap" }
                 };
 
                 const config = buttonMap[sTableId];
