@@ -17,7 +17,7 @@ entity Vertical {
 }
 
 entity Customer : managed {
-    key sapcustId        : Integer;
+    key sapcustId        : String;
         sfdccustomerId   : Integer;
         name             : String(100);
         city             : String;

@@ -1,6 +1,7 @@
 using db from '../db/schema';
 
 service MyService {
+  action GetNextCustomerId() returns String;
   entity Customers     as projection on db.Customer;
   entity Opportunities as projection on db.Opportunity;
   entity Projects      as projection on db.Project;

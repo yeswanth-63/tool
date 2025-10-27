@@ -210,7 +210,8 @@ sap.ui.define([
         _executeAddWithRetry:CustomUtility.prototype._executeAddWithRetry,
         _resolveContextByPath:CustomUtility.prototype._resolveContextByPath,
         _getRowBinding:CustomUtility.prototype._getRowBinding,
-        testCancelDirect:CustomUtility.prototype.testCancelDirect
+        testCancelDirect:CustomUtility.prototype.testCancelDirect,
+        _generateNextCustomerIdFromBinding:CustomUtility.prototype._generateNextCustomerIdFromBinding
 
         
     });
